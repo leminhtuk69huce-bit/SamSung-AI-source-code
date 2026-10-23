@@ -1,0 +1,35 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# PyInstaller / Build outputs (contains multi-hundred MB binaries)
+backend/build/
+backend/dist/
+*.spec.bak
+
+# Database & local runtime files
+*.db
+*.db-shm
+*.db-wal
+backend/ocr_database.db
+backend/dist/OCR_CCCD/ocr_database.db
+
+# Logs & temp storage files
+*.log
+backend/storage/*
+!backend/storage/.gitkeep
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# IDE & OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini

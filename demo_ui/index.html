@@ -1,0 +1,2220 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI OCR CCCD & CMND | Samsung Innovation Campus</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <style>
+    :root {
+      --bg-base:     #070b14;
+      --bg-card:     #0d1424;
+      --bg-surface:  #131c30;
+      --bg-hover:    #1a2540;
+      --border:      #1e2d47;
+      --border-light:#253552;
+      --text-primary:#e2e8f0;
+      --text-muted:  #64748b;
+      --text-dim:    #475569;
+      --accent:      #3b82f6;
+      --accent-glow: rgba(59,130,246,0.25);
+      --accent-dark: #1d4ed8;
+      --success:     #10b981;
+      --success-glow:rgba(16,185,129,0.2);
+      --warning:     #f59e0b;
+      --danger:      #ef4444;
+      --amber:       #fbbf24;
+      --radius-sm:   8px;
+      --radius-md:   12px;
+      --radius-lg:   16px;
+      --radius-xl:   20px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Be Vietnam Pro', sans-serif;
+      background: var(--bg-base);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ───── SCROLLBAR ───── */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: var(--bg-base); }
+    ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 99px; }
+
+    /* ───── LAYOUT ───── */
+    .topbar {
+      height: 58px;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      gap: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(12px);
+    }
+
+    .logo-badge {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, #3b82f6, #6366f1);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 17px;
+      box-shadow: 0 0 16px rgba(99,102,241,0.4);
+      flex-shrink: 0;
+    }
+
+    .app-title { font-size: 15px; font-weight: 800; color: #fff; letter-spacing: -0.2px; }
+    .app-sub   { font-size: 11px; color: var(--text-muted); }
+
+    .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+
+    .status-pill {
+      display: flex; align-items: center; gap: 6px;
+      background: rgba(16,185,129,0.1);
+      border: 1px solid rgba(16,185,129,0.25);
+      border-radius: 99px;
+      padding: 4px 12px;
+      font-size: 11px; font-weight: 600; color: #34d399;
+    }
+    .status-dot { width: 7px; height: 7px; background: #10b981; border-radius: 50%; animation: pulse 1.8s ease infinite; }
+
+    @keyframes pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.85); } }
+
+    /* ───── MAIN GRID ───── */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 480px 1fr;
+      grid-template-rows: 1fr;
+      height: calc(100vh - 58px);
+      overflow: hidden;
+    }
+
+    /* ───── LEFT PANEL ───── */
+    .left-panel {
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--bg-card);
+    }
+
+    /* ───── RIGHT PANEL ───── */
+    .right-panel {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ───── SECTION TABS ───── */
+    .right-tabs {
+      display: flex;
+      gap: 0;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      padding: 0 20px;
+    }
+
+    .right-tab {
+      padding: 14px 18px;
+      font-size: 12.5px; font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+      display: flex; align-items: center; gap: 7px;
+      user-select: none;
+    }
+    .right-tab:hover { color: var(--text-primary); }
+    .right-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    /* ───── RIGHT CONTENT ───── */
+    .right-content {
+      flex: 1;
+      overflow: hidden;
+    }
+    .tab-pane { display: none; height: 100%; overflow-y: auto; padding: 20px; }
+    .tab-pane.active { display: flex; flex-direction: column; }
+
+    /* ───── LEFT SUB-TABS (Webcam / Upload / Sample) ───── */
+    .scan-tabs {
+      display: flex;
+      gap: 4px;
+      padding: 12px 16px;
+      background: var(--bg-base);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .scan-tab {
+      flex: 1;
+      padding: 8px 10px;
+      border-radius: var(--radius-sm);
+      font-size: 11.5px; font-weight: 600;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      color: var(--text-muted);
+      background: transparent;
+      border: 1px solid transparent;
+      transition: all 0.18s;
+      user-select: none;
+    }
+    .scan-tab:hover { color: var(--text-primary); background: var(--bg-hover); }
+    .scan-tab.active {
+      background: rgba(59,130,246,0.12);
+      border-color: rgba(59,130,246,0.35);
+      color: #60a5fa;
+    }
+
+    /* ───── SCAN PANEL ───── */
+    .scan-content {
+      flex: 1;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .scan-pane { display: none; flex: 1; flex-direction: column; overflow-y: auto; }
+    .scan-pane.active { display: flex; }
+
+    /* ───── WEBCAM ───── */
+    .cam-wrapper {
+      position: relative;
+      background: #000;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    #webcam-video {
+      width: 100%;
+      display: block;
+      max-height: 300px;
+      object-fit: cover;
+    }
+
+    .cam-guide {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 82%; height: 76%;
+      max-width: 340px; max-height: 220px;
+      pointer-events: none;
+    }
+
+    .cam-corner {
+      position: absolute;
+      width: 20px; height: 20px;
+    }
+    .cam-corner::before, .cam-corner::after {
+      content: '';
+      position: absolute;
+      background: #3b82f6;
+      box-shadow: 0 0 10px #3b82f6;
+    }
+    .cam-corner.tl::before { width: 100%; height: 3px; top: 0; left: 0; border-radius: 2px 0 0 0; }
+    .cam-corner.tl::after  { width: 3px; height: 100%; top: 0; left: 0; border-radius: 2px 0 0 0; }
+    .cam-corner.tr::before { width: 100%; height: 3px; top: 0; right: 0; border-radius: 0 2px 0 0; }
+    .cam-corner.tr::after  { width: 3px; height: 100%; top: 0; right: 0; border-radius: 0 2px 0 0; }
+    .cam-corner.bl::before { width: 100%; height: 3px; bottom: 0; left: 0; border-radius: 0 0 0 2px; }
+    .cam-corner.bl::after  { width: 3px; height: 100%; bottom: 0; left: 0; border-radius: 0 0 0 2px; }
+    .cam-corner.br::before { width: 100%; height: 3px; bottom: 0; right: 0; border-radius: 0 0 2px 0; }
+    .cam-corner.br::after  { width: 3px; height: 100%; bottom: 0; right: 0; border-radius: 0 0 2px 0; }
+
+    .cam-corner.tl { top: 0; left: 0; }
+    .cam-corner.tr { top: 0; right: 0; }
+    .cam-corner.bl { bottom: 0; left: 0; }
+    .cam-corner.br { bottom: 0; right: 0; }
+
+    .cam-guide-center {
+      position: absolute;
+      inset: 0;
+      border: 1px dashed rgba(59,130,246,0.3);
+      border-radius: 8px;
+    }
+
+    .scan-laser {
+      position: absolute;
+      left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent 0%, #3b82f6 30%, #60a5fa 50%, #3b82f6 70%, transparent 100%);
+      box-shadow: 0 0 12px 2px rgba(59,130,246,0.6);
+      animation: laserMove 2.8s ease-in-out infinite alternate;
+      border-radius: 2px;
+    }
+    @keyframes laserMove { 0% { top: 6%; } 100% { top: 94%; } }
+
+    .cam-overlay-dark {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.65);
+      pointer-events: none;
+    }
+    /* Cut-out for guide area */
+
+    .cam-placeholder {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #070b14;
+      gap: 12px;
+      color: var(--text-dim);
+    }
+    .cam-placeholder i { font-size: 40px; }
+    .cam-placeholder p { font-size: 12px; font-weight: 500; }
+
+    .cam-tip {
+      font-size: 11px;
+      color: #60a5fa;
+      background: rgba(59,130,246,0.1);
+      padding: 5px 12px;
+      border-radius: 6px;
+      text-align: center;
+      margin: 8px 12px;
+    }
+
+    /* ───── CAM CONTROLS ───── */
+    .cam-controls {
+      padding: 10px 12px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border);
+    }
+
+    /* ───── BUTTONS ───── */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+      border: none; cursor: pointer; font-family: inherit; font-weight: 600;
+      border-radius: var(--radius-sm); transition: all 0.18s;
+      user-select: none; white-space: nowrap;
+    }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .btn-sm  { font-size: 11.5px; padding: 7px 14px; }
+    .btn-md  { font-size: 12.5px; padding: 9px 18px; }
+    .btn-lg  { font-size: 13.5px; padding: 11px 22px; }
+    .btn-xl  { font-size: 14px; padding: 13px 26px; }
+    .btn-full { width: 100%; }
+
+    .btn-primary   { background: var(--accent); color: #fff; box-shadow: 0 0 20px rgba(59,130,246,0.3); }
+    .btn-primary:hover:not(:disabled)  { background: #2563eb; box-shadow: 0 0 28px rgba(59,130,246,0.5); transform: translateY(-1px); }
+
+    .btn-success   { background: var(--success); color: #fff; box-shadow: 0 0 20px rgba(16,185,129,0.3); }
+    .btn-success:hover:not(:disabled)  { background: #059669; box-shadow: 0 0 28px rgba(16,185,129,0.5); transform: translateY(-1px); }
+
+    .btn-ghost     { background: var(--bg-hover); color: var(--text-primary); border: 1px solid var(--border-light); }
+    .btn-ghost:hover:not(:disabled)  { background: var(--border); }
+
+    .btn-danger    { background: rgba(239,68,68,0.12); color: #f87171; border: 1px solid rgba(239,68,68,0.25); }
+    .btn-danger:hover:not(:disabled) { background: rgba(239,68,68,0.2); }
+
+    .btn-amber     { background: rgba(251,191,36,0.12); color: var(--amber); border: 1px solid rgba(251,191,36,0.25); }
+    .btn-amber:hover:not(:disabled) { background: rgba(251,191,36,0.2); }
+
+    /* ───── RESULT FORM (RIGHT) ───── */
+    .result-header {
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .result-header-left { flex: 1; }
+    .result-title { font-size: 15px; font-weight: 800; color: #fff; }
+    .result-subtitle { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+    /* ───── CCCD CARD PREVIEW ───── */
+    .card-id-banner {
+      background: linear-gradient(135deg, #0d1a3a 0%, #0a1628 100%);
+      border: 1px solid rgba(59,130,246,0.3);
+      border-radius: var(--radius-md);
+      padding: 16px 18px;
+      margin-bottom: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+    .card-id-banner::before {
+      content: '';
+      position: absolute;
+      top: -30px; right: -30px;
+      width: 120px; height: 120px;
+      background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+    .card-id-label { font-size: 10px; font-weight: 700; color: #60a5fa; text-transform: uppercase; letter-spacing: 0.8px; }
+    .card-id-number {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 24px; font-weight: 700;
+      color: #fff;
+      letter-spacing: 2px;
+      margin-top: 4px;
+      min-height: 36px;
+      border: none;
+      background: transparent;
+      width: 100%;
+      outline: none;
+    }
+    .card-id-number::placeholder { color: rgba(255,255,255,0.2); font-size: 18px; letter-spacing: 1px; }
+    .card-id-number:focus { outline: 1px solid rgba(59,130,246,0.4); border-radius: 4px; padding: 2px 4px; }
+
+    .card-meta {
+      display: flex; align-items: center; gap: 10px;
+      margin-top: 10px;
+    }
+    .doc-type-badge {
+      padding: 3px 10px;
+      border-radius: 99px;
+      font-size: 10px; font-weight: 700;
+      background: rgba(99,102,241,0.15);
+      color: #a5b4fc;
+      border: 1px solid rgba(99,102,241,0.3);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .conf-badge {
+      padding: 3px 10px;
+      border-radius: 99px;
+      font-size: 10px; font-weight: 700;
+    }
+    .conf-high   { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+    .conf-medium { background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); }
+    .conf-low    { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+
+    .copy-id-btn {
+      margin-left: auto;
+      padding: 5px 10px;
+      background: rgba(59,130,246,0.12);
+      border: 1px solid rgba(59,130,246,0.25);
+      border-radius: 6px;
+      color: #60a5fa;
+      font-size: 11px; font-weight: 600;
+      cursor: pointer;
+      transition: all 0.18s;
+    }
+    .copy-id-btn:hover { background: rgba(59,130,246,0.22); }
+
+    /* ───── FIELD GRID ───── */
+    .fields-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .field-full { grid-column: 1 / -1; }
+
+    .field-group { display: flex; flex-direction: column; gap: 5px; }
+    .field-label {
+      font-size: 10.5px; font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: 0.6px;
+      display: flex; align-items: center; gap: 5px;
+    }
+    .field-label i { font-size: 9px; color: var(--accent); }
+
+    .field-input {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 9px 12px;
+      font-size: 12.5px; font-weight: 500;
+      color: var(--text-primary);
+      font-family: inherit;
+      width: 100%;
+      outline: none;
+      transition: border-color 0.18s, box-shadow 0.18s;
+      resize: none;
+    }
+    .field-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    .field-input::placeholder { color: var(--text-dim); }
+    .field-input.name-field { font-weight: 700; color: var(--amber); font-size: 13.5px; }
+    .field-input.verified { border-color: rgba(16,185,129,0.4); background: rgba(16,185,129,0.05); }
+
+    /* ───── SECTION DIVIDER ───── */
+    .section-divider {
+      display: flex; align-items: center; gap: 10px;
+      margin: 14px 0 12px;
+    }
+    .section-divider-line { flex: 1; height: 1px; background: var(--border); }
+    .section-divider-label {
+      font-size: 10px; font-weight: 700;
+      color: var(--text-dim);
+      text-transform: uppercase; letter-spacing: 0.8px;
+      padding: 3px 10px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      white-space: nowrap;
+    }
+
+    /* ───── WARNING BOX ───── */
+    .warnings-box {
+      background: rgba(245,158,11,0.07);
+      border: 1px solid rgba(245,158,11,0.25);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      margin-bottom: 14px;
+    }
+    .warnings-box p { font-size: 11.5px; color: #fbbf24; font-weight: 500; }
+    .warnings-box p::before { content: '⚠ '; }
+    .warnings-box p + p { margin-top: 4px; }
+
+    /* ───── CONFIRM SECTION ───── */
+    .confirm-section {
+      background: var(--bg-card);
+      border-top: 1px solid var(--border);
+      padding: 14px 20px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .confirm-info {
+      flex: 1;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .confirm-info strong { color: var(--text-primary); }
+
+    /* ───── HISTORY TABLE ───── */
+    .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .data-table th {
+      background: var(--bg-surface);
+      padding: 10px 14px;
+      text-align: left;
+      font-size: 10.5px; font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    .data-table td {
+      padding: 11px 14px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-primary);
+      vertical-align: middle;
+    }
+    .data-table tr:hover td { background: var(--bg-hover); cursor: pointer; }
+    .data-table tr:last-child td { border-bottom: none; }
+
+    /* ───── STATS CARDS ───── */
+    .stat-cards {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+    }
+    .stat-icon {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+    .stat-value { font-size: 22px; font-weight: 800; color: #fff; }
+    .stat-label { font-size: 11px; color: var(--text-muted); font-weight: 500; margin-top: 2px; }
+
+    .charts-grid { display: grid; grid-template-columns: 1fr 1.6fr; gap: 16px; }
+    .chart-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+    }
+    .chart-title { font-size: 12px; font-weight: 700; color: var(--text-primary); margin-bottom: 14px; }
+
+    /* ───── LOADING OVERLAY ───── */
+    .loading-overlay {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: rgba(7,11,20,0.85);
+      z-index: 50;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      backdrop-filter: blur(4px);
+    }
+    .loading-overlay.show { display: flex; }
+
+    .spinner {
+      width: 44px; height: 44px;
+      border: 3px solid rgba(59,130,246,0.15);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-text { font-size: 13px; font-weight: 600; color: #60a5fa; animation: blink 1.2s ease infinite; }
+    @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+    /* ───── TOAST ───── */
+    #toast-container {
+      position: fixed;
+      bottom: 24px; right: 24px;
+      display: flex; flex-direction: column; gap: 8px;
+      z-index: 9999;
+    }
+    .toast {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      font-size: 12.5px; font-weight: 600;
+      min-width: 260px;
+      display: flex; align-items: center; gap: 10px;
+      animation: slideIn 0.25s ease;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+    }
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    .toast.success { border-left: 3px solid var(--success); }
+    .toast.error   { border-left: 3px solid var(--danger);  }
+    .toast.info    { border-left: 3px solid var(--accent);  }
+    .toast.warning { border-left: 3px solid var(--warning); }
+
+    /* ───── DROPZONE ───── */
+    .dropzone {
+      border: 2px dashed var(--border-light);
+      border-radius: var(--radius-md);
+      padding: 28px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: var(--bg-surface);
+      margin: 12px;
+    }
+    .dropzone:hover, .dropzone.drag-over {
+      border-color: var(--accent);
+      background: rgba(59,130,246,0.06);
+    }
+    .dropzone i { font-size: 32px; color: var(--text-dim); margin-bottom: 10px; display: block; }
+    .dropzone p { font-size: 12.5px; color: var(--text-muted); font-weight: 500; }
+    .dropzone small { font-size: 11px; color: var(--text-dim); }
+
+    /* ───── UPLOAD PREVIEW ───── */
+    .upload-preview {
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+      padding: 12px;
+    }
+    .upload-thumb {
+      width: 100%;
+      max-height: 230px;
+      object-fit: contain;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background: #000;
+    }
+
+    /* ───── SAMPLE GRID ───── */
+    .sample-controls {
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .sample-index-row {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+    }
+    .sample-index-row label { font-size: 12px; font-weight: 600; color: var(--text-muted); flex: 1; }
+    .sample-index-input {
+      width: 70px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 13px; font-weight: 700;
+      color: #fff;
+      text-align: center;
+      outline: none;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .sample-info-box {
+      background: rgba(99,102,241,0.07);
+      border: 1px solid rgba(99,102,241,0.2);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      font-size: 11.5px;
+      color: #a5b4fc;
+    }
+    .sample-info-box strong { font-weight: 700; }
+
+    /* ───── EMPTY STATE ───── */
+    .empty-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 30px;
+      gap: 12px;
+      color: var(--text-dim);
+    }
+    .empty-state-icon {
+      width: 68px; height: 68px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px; color: var(--text-dim);
+    }
+    .empty-state h3 { font-size: 14px; font-weight: 700; color: var(--text-muted); }
+    .empty-state p  { font-size: 12px; max-width: 260px; line-height: 1.6; }
+
+    /* ───── VERIFIED BANNER ───── */
+    .verified-banner {
+      display: none;
+      background: linear-gradient(135deg, rgba(16,185,129,0.12), rgba(16,185,129,0.06));
+      border: 1px solid rgba(16,185,129,0.3);
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      margin-bottom: 14px;
+      align-items: center;
+      gap: 10px;
+    }
+    .verified-banner.show { display: flex; }
+    .verified-banner i { font-size: 20px; color: var(--success); }
+    .verified-banner p { font-size: 12.5px; font-weight: 600; color: #34d399; }
+    .verified-banner small { font-size: 11px; color: rgba(52,211,153,0.6); display: block; }
+
+    /* ───── SEARCH BOX ───── */
+    .search-box {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 8px 14px;
+      font-size: 12.5px;
+      color: var(--text-primary);
+      width: 200px;
+      outline: none;
+      font-family: inherit;
+    }
+    .search-box:focus { border-color: var(--accent); }
+
+    /* Pagination */
+    .pagination {
+      display: flex; align-items: center; gap: 6px;
+      padding: 14px 20px;
+      border-top: 1px solid var(--border);
+      background: var(--bg-card);
+    }
+    .page-btn {
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 11.5px; font-weight: 600;
+      cursor: pointer;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      transition: all 0.15s;
+    }
+    .page-btn:hover, .page-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    /* Select dropdown */
+    select.field-input { cursor: pointer; }
+
+    /* Flex helpers */
+    .flex   { display: flex; }
+    .gap-8  { gap: 8px; }
+    .gap-10 { gap: 10px; }
+    .items-center { align-items: center; }
+    .justify-between { justify-content: space-between; }
+    .flex-1 { flex: 1; }
+    .ml-auto { margin-left: auto; }
+
+    .text-muted { color: var(--text-muted); }
+    .text-xs { font-size: 11px; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+    .font-bold { font-weight: 700; }
+    .text-accent { color: var(--accent); }
+    .text-success { color: var(--success); }
+    .text-warning { color: var(--warning); }
+    .text-danger  { color: var(--danger); }
+    .text-amber   { color: var(--amber); }
+    .text-white   { color: #fff; }
+
+    /* ───── FLASH EFFECT ───── */
+    .flash-overlay {
+      position: fixed; inset: 0;
+      background: #fff;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 999;
+      transition: opacity 0s;
+    }
+    .flash-overlay.flash {
+      animation: flashAnim 0.25s ease;
+    }
+    @keyframes flashAnim {
+      0%   { opacity: 0.7; }
+      100% { opacity: 0; }
+    }
+
+    /* ───── PROCESSING BADGE ───── */
+    .processing-time-badge {
+      font-size: 10px; color: var(--text-dim);
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      padding: 2px 8px; border-radius: 99px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* 2-column scan+result panel */
+    .scan-result-split {
+      display: grid;
+      grid-template-columns: 480px 1fr;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* VERIFICATION OVERLAY */
+    .verification-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(7,11,20,0.9);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(8px);
+    }
+    .verification-overlay.show { display: flex; }
+    .verification-modal {
+      background: var(--bg-card);
+      border: 1px solid rgba(16,185,129,0.4);
+      border-radius: var(--radius-xl);
+      padding: 36px 40px;
+      width: 420px;
+      text-align: center;
+      box-shadow: 0 0 60px rgba(16,185,129,0.15);
+    }
+    .v-icon-circle {
+      width: 72px; height: 72px;
+      background: rgba(16,185,129,0.12);
+      border: 2px solid var(--success);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 32px; color: var(--success);
+      margin: 0 auto 20px;
+      animation: successPulse 1s ease;
+    }
+    @keyframes successPulse {
+      0%   { transform: scale(0.5); opacity: 0; }
+      60%  { transform: scale(1.1); }
+      100% { transform: scale(1);   opacity: 1; }
+    }
+    .v-title { font-size: 20px; font-weight: 800; color: #fff; margin-bottom: 6px; }
+    .v-sub   { font-size: 13px; color: var(--text-muted); margin-bottom: 22px; line-height: 1.5; }
+    .v-card-info {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 14px 18px;
+      margin-bottom: 22px;
+      text-align: left;
+    }
+    .v-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 12.5px; }
+    .v-row:last-child { margin-bottom: 0; }
+    .v-key   { color: var(--text-muted); font-weight: 500; }
+    .v-value { color: #fff; font-weight: 700; }
+
+    /* ───── BBOX CANVAS ───── */
+    #bbox-canvas {
+      position: absolute;
+      top: 0; left: 0;
+      pointer-events: none;
+      width: 100%; height: 100%;
+    }
+
+    /* Cam source selector */
+    select.cam-select {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 7px 10px;
+      font-size: 11.5px;
+      color: var(--text-muted);
+      font-family: inherit;
+      outline: none;
+      cursor: pointer;
+    }
+
+    /* right scrollable */
+    .result-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 18px 20px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Flash overlay for camera shutter effect -->
+<div class="flash-overlay" id="flash-overlay"></div>
+
+<!-- Toast container -->
+<div id="toast-container"></div>
+
+<!-- Verification overlay -->
+<div class="verification-overlay" id="verification-overlay" onclick="closeVerificationModal()">
+  <div class="verification-modal" onclick="event.stopPropagation()">
+    <div class="v-icon-circle"><i class="fa-solid fa-check"></i></div>
+    <div class="v-title">Thông Tin Đã Được Xác Nhận!</div>
+    <div class="v-sub">Dữ liệu CCCD/CMND đã được xác thực và lưu vào hệ thống thành công.</div>
+    <div class="v-card-info" id="v-summary"></div>
+    <button class="btn btn-success btn-md btn-full" onclick="closeVerificationModal()">
+      <i class="fa-solid fa-check-double"></i> Đóng & Tiếp tục
+    </button>
+  </div>
+</div>
+
+<!-- ───── TOPBAR ───── -->
+<header class="topbar">
+  <div class="logo-badge"><i class="fa-solid fa-id-card-clip"></i></div>
+  <div>
+    <div class="app-title">AI OCR · Nhận diện CCCD & CMND</div>
+    <div class="app-sub">Samsung Innovation Campus — Capstone Project 2026</div>
+  </div>
+  <div class="topbar-right">
+    <a href="/docs" target="_blank" class="btn btn-ghost btn-sm">
+      <i class="fa-solid fa-code text-accent"></i> Swagger API
+    </a>
+    <div class="status-pill">
+      <div class="status-dot"></div>
+      Backend sẵn sàng
+    </div>
+  </div>
+</header>
+
+<!-- ───── MAIN LAYOUT ───── -->
+<div style="display:flex; flex-direction:column; height:calc(100vh - 58px);">
+
+  <!-- ── Top navigation tabs ── -->
+  <div class="right-tabs">
+    <div class="right-tab active" id="tab-btn-scan" onclick="switchMainTab('scan')">
+      <i class="fa-solid fa-camera-viewfinder"></i> Quét CCCD
+    </div>
+    <div class="right-tab" id="tab-btn-history" onclick="switchMainTab('history')">
+      <i class="fa-solid fa-clock-rotate-left"></i> Lịch sử
+      <span id="history-count-badge" style="background:rgba(59,130,246,0.15);color:#60a5fa;border:1px solid rgba(59,130,246,0.3);padding:1px 7px;border-radius:99px;font-size:10px;font-weight:700;margin-left:2px;">0</span>
+    </div>
+    <div class="right-tab" id="tab-btn-stats" onclick="switchMainTab('stats')">
+      <i class="fa-solid fa-chart-pie"></i> Thống kê
+    </div>
+  </div>
+
+  <!-- ── SCAN TAB (main scanner + result side-by-side) ── -->
+  <div id="tab-scan" style="flex:1;overflow:hidden;display:flex;">
+    <!-- LEFT: Input panel -->
+    <div class="left-panel" style="flex-shrink:0; width:440px; position:relative;">
+      <!-- Sub-tabs -->
+      <div class="scan-tabs">
+        <div class="scan-tab active" id="stab-webcam" onclick="switchScanTab('webcam')">
+          <i class="fa-solid fa-camera"></i> Webcam PC
+        </div>
+        <div class="scan-tab" id="stab-upload" onclick="switchScanTab('upload')">
+          <i class="fa-solid fa-cloud-arrow-up"></i> Tải ảnh
+        </div>
+        <div class="scan-tab" id="stab-sample" onclick="switchScanTab('sample')">
+          <i class="fa-solid fa-database"></i> Mẫu (48 bộ)
+        </div>
+      </div>
+
+      <!-- WEBCAM PANE -->
+      <div class="scan-pane active" id="spane-webcam">
+        <!-- Camera view -->
+        <div class="cam-wrapper" id="cam-wrapper" style="height:290px; flex-shrink:0; position:relative; overflow:hidden;">
+          <video id="webcam-video" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;display:block;"></video>
+          <img id="webcam-snapshot-img" style="display:none; width:100%; height:100%; object-fit:contain; background:#0b1120;" alt="Snapshot">
+          <canvas id="webcam-canvas" style="display:none;"></canvas>
+          <!-- BBox canvas -->
+          <canvas id="bbox-canvas"></canvas>
+          <!-- Snapshot Badge -->
+          <div id="snapshot-badge" style="display:none; position:absolute; top:10px; left:10px; z-index:15; background:rgba(16,185,129,0.92); color:#fff; font-size:11px; font-weight:700; padding:4px 10px; border-radius:20px; box-shadow:0 2px 8px rgba(0,0,0,0.5); backdrop-filter:blur(4px); align-items:center; gap:6px;">
+            <i class="fa-solid fa-camera"></i> Đã chụp ảnh · Sẵn sàng trích xuất
+          </div>
+          <!-- Guide overlay -->
+          <div id="cam-guide-el" style="display:none; position:absolute;inset:0; pointer-events:none;">
+            <div class="cam-guide" id="cam-guide">
+              <div class="cam-corner tl"></div>
+              <div class="cam-corner tr"></div>
+              <div class="cam-corner bl"></div>
+              <div class="cam-corner br"></div>
+              <div class="cam-guide-center"></div>
+              <div class="scan-laser" id="scan-laser"></div>
+            </div>
+          </div>
+          <!-- Placeholder -->
+          <div class="cam-placeholder" id="cam-placeholder">
+            <i class="fa-solid fa-video-slash"></i>
+            <p>Webcam chưa được bật</p>
+            <small style="font-size:11px; color:var(--text-dim);">Bấm "Bật Webcam" bên dưới</small>
+          </div>
+        </div>
+
+        <!-- Cam tip -->
+        <div class="cam-tip" id="cam-tip" style="display:none;">
+          <i class="fa-solid fa-info-circle"></i> Đặt thẻ CCCD vào khung ngắm, căn chỉnh rõ nét rồi nhấn <strong>"Chụp ảnh"</strong>.
+        </div>
+
+        <!-- Camera controls: LIVE MODE -->
+        <div class="cam-controls" id="cam-controls-live" style="flex-shrink:0;">
+          <select class="cam-select" id="camera-device-select" style="flex:1; max-width:140px;">
+            <option value="">📷 Webcam mặc định</option>
+          </select>
+          <select class="cam-select" id="cam-side-select" style="flex:1; max-width:130px;">
+            <option value="auto">Tự động phát hiện</option>
+            <option value="front">Mặt trước</option>
+            <option value="back">Mặt sau</option>
+          </select>
+          <button class="btn btn-ghost btn-sm" id="btn-toggle-cam" onclick="toggleCamera()">
+            <i class="fa-solid fa-power-off" style="color:var(--success);"></i> Bật cam
+          </button>
+          <button class="btn btn-primary btn-sm" id="btn-capture-photo" onclick="capturePhoto()" disabled style="background:linear-gradient(135deg, #2563eb, #1d4ed8); font-weight:700;">
+            <i class="fa-solid fa-camera"></i> Chụp ảnh
+          </button>
+        </div>
+
+        <!-- Camera controls: CAPTURED / REVIEW MODE -->
+        <div class="cam-controls" id="cam-controls-review" style="display:none; flex-shrink:0; background:rgba(30, 41, 59, 0.7); border:1px solid rgba(59, 130, 246, 0.3); border-radius:8px; padding:6px 10px; gap:8px;">
+          <button class="btn btn-ghost btn-sm" id="btn-retake-photo" onclick="retakePhoto()" style="flex:1;">
+            <i class="fa-solid fa-rotate-left"></i> Chụp lại
+          </button>
+          <button class="btn btn-success btn-sm" id="btn-extract-data" onclick="extractCapturedPhoto()" style="flex:1.6; font-weight:700; background:linear-gradient(135deg, #10b981, #059669); box-shadow:0 0 12px rgba(16,185,129,0.35);">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Trích xuất thông tin
+          </button>
+        </div>
+
+        <!-- Scan-both info -->
+        <div style="padding:10px 12px 0; flex-shrink:0;">
+          <div style="font-size:11px; color:var(--text-dim); display:flex; align-items:center; gap:6px; margin-bottom:6px;">
+            <i class="fa-solid fa-circle-info" style="color:var(--accent);"></i>
+            Sau khi quét mặt trước, chuyển thẻ lấy mặt sau và chụp tiếp để ghép thông tin đầy đủ.
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn-amber btn-sm" onclick="resetScan()" style="flex:1;">
+              <i class="fa-solid fa-rotate-left"></i> Quét lại
+            </button>
+            <button class="btn btn-ghost btn-sm" onclick="exportCurrentJSON()" style="flex:1;">
+              <i class="fa-solid fa-download"></i> Xuất JSON
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- UPLOAD PANE -->
+      <div class="scan-pane" id="spane-upload">
+        <div class="dropzone" id="dropzone"
+          onclick="document.getElementById('file-input').click()"
+          ondragover="event.preventDefault(); this.classList.add('drag-over');"
+          ondragleave="this.classList.remove('drag-over');"
+          ondrop="handleDrop(event)">
+          <input type="file" id="file-input" accept="image/*" style="display:none;" onchange="handleFileSelected(event)">
+          <i class="fa-solid fa-cloud-arrow-up"></i>
+          <p><strong>Kéo & thả ảnh vào đây</strong> hoặc click để chọn</p>
+          <small>JPG, PNG, JPEG — tối đa 10 MB</small>
+        </div>
+
+        <div class="upload-preview" id="upload-preview">
+          <img id="upload-thumb" class="upload-thumb" src="" alt="Preview">
+          <div style="display:flex; gap:8px; padding:0 2px;">
+            <select class="cam-select flex-1" id="upload-side-select">
+              <option value="auto">Tự động phát hiện</option>
+              <option value="front">Mặt trước</option>
+              <option value="back">Mặt sau</option>
+            </select>
+            <button class="btn btn-primary btn-sm" style="flex:1;" onclick="scanUploadedFile()">
+              <i class="fa-solid fa-magnifying-glass"></i> Quét ảnh này
+            </button>
+          </div>
+          <div style="display:flex; gap:8px; padding:0 2px;">
+            <button class="btn btn-ghost btn-sm" style="flex:1;" onclick="resetUpload()">
+              <i class="fa-solid fa-xmark"></i> Chọn ảnh khác
+            </button>
+          </div>
+        </div>
+
+        <!-- Scan both section -->
+        <div style="padding:8px 12px;">
+          <div class="section-divider">
+            <div class="section-divider-line"></div>
+            <div class="section-divider-label">Hoặc quét 2 mặt cùng lúc</div>
+            <div class="section-divider-line"></div>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+            <div>
+              <div style="font-size:10.5px;font-weight:700;color:var(--text-muted);margin-bottom:5px; text-transform:uppercase;">Mặt trước</div>
+              <div style="position:relative;">
+                <img id="front-thumb" style="width:100%;height:80px;object-fit:cover;border-radius:8px;border:1px solid var(--border);background:#000;display:block;">
+                <div id="front-thumb-placeholder" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg-surface);border:2px dashed var(--border-light);border-radius:8px;cursor:pointer;font-size:11px;color:var(--text-dim);" onclick="document.getElementById('front-file').click()">
+                  <i class="fa-solid fa-plus" style="margin-right:4px;"></i> Chọn ảnh
+                </div>
+                <input type="file" id="front-file" accept="image/*" style="display:none;" onchange="handleFrontFile(event)">
+              </div>
+            </div>
+            <div>
+              <div style="font-size:10.5px;font-weight:700;color:var(--text-muted);margin-bottom:5px; text-transform:uppercase;">Mặt sau</div>
+              <div style="position:relative;">
+                <img id="back-thumb" style="width:100%;height:80px;object-fit:cover;border-radius:8px;border:1px solid var(--border);background:#000;display:block;">
+                <div id="back-thumb-placeholder" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg-surface);border:2px dashed var(--border-light);border-radius:8px;cursor:pointer;font-size:11px;color:var(--text-dim);" onclick="document.getElementById('back-file').click()">
+                  <i class="fa-solid fa-plus" style="margin-right:4px;"></i> Chọn ảnh
+                </div>
+                <input type="file" id="back-file" accept="image/*" style="display:none;" onchange="handleBackFile(event)">
+              </div>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-sm btn-full" style="margin-top:10px;" onclick="scanBothSides()">
+            <i class="fa-solid fa-layer-group"></i> Ghép & Quét cả 2 mặt
+          </button>
+        </div>
+      </div>
+
+      <!-- SAMPLE PANE -->
+      <div class="scan-pane" id="spane-sample">
+        <div class="sample-controls">
+          <div class="sample-info-box">
+            <strong>48 bộ dữ liệu mẫu</strong> từ thư mục <code style="font-size:10.5px;">Dữ liệu mẫu/</code><br>
+            Mỗi bộ gồm mặt trước và mặt sau của thẻ CCCD thực nghiệm.
+          </div>
+          <div class="sample-index-row">
+            <label><i class="fa-solid fa-hashtag" style="color:var(--accent);margin-right:5px;"></i> Bộ mẫu số:</label>
+            <input type="number" class="sample-index-input" id="sample-index" min="0" max="47" value="0">
+            <span style="font-size:10px; color:var(--text-dim);">(0 → 47)</span>
+          </div>
+
+          <!-- Sample quick picker -->
+          <div style="display:flex; flex-wrap:wrap; gap:5px; max-height:130px; overflow-y:auto;">
+            <script>
+              // Quick picker buttons will be added after dom load
+            </script>
+          </div>
+          <div id="sample-quick-picker" style="display:flex; flex-wrap:wrap; gap:5px; max-height:130px; overflow-y:auto;"></div>
+
+          <button class="btn btn-primary btn-md btn-full" onclick="runSampleOCR()">
+            <i class="fa-solid fa-play"></i> Quét bộ mẫu này
+          </button>
+          <button class="btn btn-ghost btn-sm btn-full" onclick="runAllSamplesDemo()">
+            <i class="fa-solid fa-forward-fast"></i> Quét nhanh mẫu kế tiếp
+          </button>
+        </div>
+      </div>
+
+      <!-- Loading overlay (inside left panel) -->
+      <div class="loading-overlay" id="left-loading">
+        <div class="spinner"></div>
+        <div class="loading-text" id="left-loading-text">Đang xử lý OCR...</div>
+        <div style="font-size:11px; color:var(--text-dim);">CRAFT Text Detection → EasyOCR Recognition → Field Extraction</div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Result inspector -->
+    <div style="flex:1; display:flex; flex-direction:column; overflow:hidden; position:relative;">
+      <!-- Result header -->
+      <div class="result-header">
+        <div class="result-header-left">
+          <div class="result-title">Thông Tin Trích Xuất</div>
+          <div class="result-subtitle" id="result-subtitle">Chưa có kết quả — Hãy quét thẻ từ bên trái</div>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="processing-time-badge" id="proc-time-badge" style="display:none;"></span>
+          <span class="conf-badge" id="conf-badge" style="display:none;"></span>
+          <button class="btn btn-ghost btn-sm" onclick="printRecord()" id="btn-print" style="display:none;">
+            <i class="fa-solid fa-print"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Result scrollable area -->
+      <div class="result-scroll" id="result-scroll">
+        <!-- Empty state -->
+        <div class="empty-state" id="empty-state">
+          <div class="empty-state-icon"><i class="fa-solid fa-id-card"></i></div>
+          <h3>Chưa có thông tin nào</h3>
+          <p>Quét thẻ CCCD/CMND qua webcam máy tính hoặc tải ảnh để hệ thống tự động nhận diện và điền thông tin vào các ô bên dưới.</p>
+        </div>
+
+        <!-- Result form -->
+        <div id="result-form" style="display:none;">
+
+          <!-- Verified banner -->
+          <div class="verified-banner" id="verified-banner">
+            <i class="fa-solid fa-shield-check"></i>
+            <div>
+              <p>Thông tin đã được xác nhận chính xác!</p>
+              <small id="verified-at-text">Xác nhận lúc ...</small>
+            </div>
+          </div>
+
+          <!-- Warnings -->
+          <div class="warnings-box" id="warnings-box" style="display:none;"></div>
+
+          <!-- ID Number Banner -->
+          <div class="card-id-banner">
+            <div style="display:flex; align-items:flex-start; justify-content:space-between;">
+              <div style="flex:1;">
+                <div class="card-id-label"><i class="fa-solid fa-hashtag"></i> &nbsp;SỐ CĂN CƯỚC CÔNG DÂN / CHỨNG MINH NHÂN DÂN</div>
+                <input type="text" class="card-id-number" id="f-id-number" placeholder="000 000 000 000" maxlength="14" />
+              </div>
+              <button class="copy-id-btn" onclick="copyField('f-id-number', 'Số CCCD/CMND')">
+                <i class="fa-regular fa-copy"></i> Copy
+              </button>
+            </div>
+            <div class="card-meta">
+              <span class="doc-type-badge" id="doc-type-badge">CCCD</span>
+              <span style="font-size:10px; color:var(--text-dim);" id="card-side-label">Mặt trước</span>
+              <span id="expiry-warning-pill" style="display:none; padding:3px 10px; border-radius:99px; font-size:10px; font-weight:700; background:rgba(239,68,68,0.15); color:#f87171; border:1px solid rgba(239,68,68,0.3);">
+                <i class="fa-solid fa-triangle-exclamation"></i> Đã hết hạn
+              </span>
+            </div>
+          </div>
+
+          <!-- Name (full width) -->
+          <div style="margin-bottom:14px;">
+            <div class="field-label"><i class="fa-solid fa-user"></i> Họ và tên đầy đủ</div>
+            <input type="text" class="field-input name-field" id="f-full-name" placeholder="NGUYỄN VĂN A" style="margin-top:5px;" />
+          </div>
+
+          <!-- Grid: DOB / Gender / Nationality -->
+          <div class="fields-grid">
+            <div class="field-group">
+              <div class="field-label"><i class="fa-solid fa-calendar"></i> Ngày sinh</div>
+              <input type="text" class="field-input" id="f-dob" placeholder="DD/MM/YYYY" />
+            </div>
+            <div class="field-group">
+              <div class="field-label"><i class="fa-solid fa-venus-mars"></i> Giới tính</div>
+              <select class="field-input" id="f-gender">
+                <option value="">Chọn...</option>
+                <option value="Nam">Nam</option>
+                <option value="Nữ">Nữ</option>
+              </select>
+            </div>
+            <div class="field-group field-full">
+              <div class="field-label"><i class="fa-solid fa-flag"></i> Quốc tịch</div>
+              <input type="text" class="field-input" id="f-nationality" value="Việt Nam" />
+            </div>
+          </div>
+
+          <!-- Place of Origin -->
+          <div class="field-group" style="margin-bottom:12px;">
+            <div class="field-label"><i class="fa-solid fa-map-pin"></i> Quê quán</div>
+            <textarea class="field-input" id="f-origin" rows="2" placeholder="Xã/Phường, Huyện/Quận, Tỉnh/TP" style="margin-top:5px;"></textarea>
+          </div>
+
+          <!-- Place of Residence -->
+          <div class="field-group" style="margin-bottom:12px;">
+            <div class="field-label"><i class="fa-solid fa-house"></i> Nơi thường trú</div>
+            <textarea class="field-input" id="f-residence" rows="2" placeholder="Số nhà, đường, Phường/Xã, Quận/Huyện, Tỉnh/TP" style="margin-top:5px;"></textarea>
+          </div>
+
+          <!-- Expiry date -->
+          <div class="field-group" style="margin-bottom:14px;">
+            <div class="field-label"><i class="fa-solid fa-hourglass-end"></i> Có giá trị đến</div>
+            <input type="text" class="field-input" id="f-expiry" placeholder="DD/MM/YYYY hoặc Không thời hạn" style="margin-top:5px;" />
+          </div>
+
+          <!-- Back side section -->
+          <div id="back-section" style="display:none;">
+            <div class="section-divider">
+              <div class="section-divider-line"></div>
+              <div class="section-divider-label"><i class="fa-solid fa-id-card-clip"></i>&nbsp; Thông tin mặt sau</div>
+              <div class="section-divider-line"></div>
+            </div>
+
+            <div class="fields-grid">
+              <div class="field-group">
+                <div class="field-label"><i class="fa-solid fa-calendar-check"></i> Ngày cấp</div>
+                <input type="text" class="field-input" id="f-issue-date" placeholder="DD/MM/YYYY" />
+              </div>
+              <div class="field-group">
+                <div class="field-label"><i class="fa-solid fa-building-columns"></i> Cơ quan cấp</div>
+                <input type="text" class="field-input" id="f-authority" placeholder="Cục cảnh sát QLHC..." />
+              </div>
+              <div class="field-group field-full">
+                <div class="field-label"><i class="fa-solid fa-person-circle-check"></i> Đặc điểm nhận dạng</div>
+                <input type="text" class="field-input" id="f-features" placeholder="Nốt ruồi, sẹo..." />
+              </div>
+              <div class="field-group field-full">
+                <div class="field-label"><i class="fa-solid fa-barcode"></i> Mã MRZ</div>
+                <input type="text" class="field-input font-mono" id="f-mrz" placeholder="MRZ code" style="font-size:11.5px;" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Notes -->
+          <div class="field-group" style="margin-bottom:16px;">
+            <div class="field-label"><i class="fa-solid fa-note-sticky"></i> Ghi chú (tùy chọn)</div>
+            <input type="text" class="field-input" id="f-notes" placeholder="Ghi chú thêm..." style="margin-top:5px;" />
+          </div>
+
+          <!-- Spacer so content doesn't go behind fixed bottom bar -->
+          <div style="height: 16px;"></div>
+
+        </div><!-- end result-form -->
+      </div><!-- end result-scroll -->
+
+      <!-- Fixed bottom confirm bar -->
+      <div class="confirm-section" id="confirm-bar" style="display:none;">
+        <div class="confirm-info">
+          <div><strong id="confirm-name-preview">—</strong></div>
+          <div style="margin-top:2px;">Kiểm tra tất cả thông tin trước khi xác nhận</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="exportCurrentJSON()">
+          <i class="fa-solid fa-download"></i> JSON
+        </button>
+        <button class="btn btn-ghost btn-sm" onclick="exportCurrentCSV()">
+          <i class="fa-solid fa-file-csv"></i> CSV
+        </button>
+        <button class="btn btn-success btn-md" onclick="confirmAndSave()" id="btn-confirm">
+          <i class="fa-solid fa-shield-check"></i> Xác nhận chính xác
+        </button>
+      </div>
+
+    </div><!-- end right panel -->
+  </div><!-- end tab-scan -->
+
+  <!-- ── HISTORY TAB ── -->
+  <div id="tab-history" style="flex:1;overflow:hidden;display:none;flex-direction:column;">
+    <!-- History toolbar -->
+    <div style="display:flex;align-items:center;gap:10px;padding:12px 20px;background:var(--bg-card);border-bottom:1px solid var(--border);">
+      <input type="text" class="search-box" id="history-search" placeholder="🔍 Tìm tên, số CCCD, địa chỉ..." oninput="debounceSearch()" />
+      <select class="cam-select" id="filter-doc-type" onchange="loadHistory()">
+        <option value="">Tất cả loại</option>
+        <option value="CCCD_CHIP">CCCD có chip</option>
+        <option value="CMND_12">CMND 12 số</option>
+        <option value="CMND_9">CMND 9 số</option>
+      </select>
+      <select class="cam-select" id="filter-side" onchange="loadHistory()">
+        <option value="">Tất cả mặt</option>
+        <option value="FRONT">Mặt trước</option>
+        <option value="BACK">Mặt sau</option>
+        <option value="BOTH">Cả 2 mặt</option>
+      </select>
+      <div class="ml-auto" style="display:flex;gap:8px;">
+        <a href="/api/v1/ocr/export?format=xlsx" target="_blank" class="btn btn-ghost btn-sm" style="color:#34d399;border-color:rgba(16,185,129,0.3);">
+          <i class="fa-solid fa-file-excel"></i> Excel
+        </a>
+        <a href="/api/v1/ocr/export?format=csv" target="_blank" class="btn btn-ghost btn-sm">
+          <i class="fa-solid fa-file-csv"></i> CSV
+        </a>
+        <button class="btn btn-ghost btn-sm" onclick="loadHistory()">
+          <i class="fa-solid fa-rotate-right"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- History table -->
+    <div style="flex:1;overflow:auto;">
+      <table class="data-table" id="history-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Thời gian</th>
+            <th>Loại</th>
+            <th>Số CCCD/CMND</th>
+            <th>Họ và tên</th>
+            <th>Ngày sinh</th>
+            <th>Địa chỉ thường trú</th>
+            <th>Tin cậy</th>
+            <th>Trạng thái</th>
+            <th>Thao tác</th>
+          </tr>
+        </thead>
+        <tbody id="history-tbody">
+          <tr><td colspan="10" style="text-align:center;padding:30px;color:var(--text-dim);">Đang tải...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" id="pagination-bar">
+      <span style="font-size:11.5px;color:var(--text-muted);" id="pagination-info">Tổng: 0 bản ghi</span>
+      <div class="ml-auto" style="display:flex;gap:5px;" id="pagination-btns"></div>
+    </div>
+  </div>
+
+  <!-- ── STATS TAB ── -->
+  <div id="tab-stats" style="flex:1;overflow:auto;display:none;padding:20px;">
+    <!-- KPI Cards -->
+    <div class="stat-cards" id="kpi-cards">
+      <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(59,130,246,0.12);color:#60a5fa;"><i class="fa-solid fa-scanner-touchscreen"></i></div>
+        <div class="stat-value" id="kpi-total">—</div>
+        <div class="stat-label">Tổng lượt quét</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(16,185,129,0.12);color:#34d399;"><i class="fa-solid fa-calendar-day"></i></div>
+        <div class="stat-value" id="kpi-today">—</div>
+        <div class="stat-label">Quét hôm nay</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(251,191,36,0.12);color:#fbbf24;"><i class="fa-solid fa-star"></i></div>
+        <div class="stat-value" id="kpi-conf">—</div>
+        <div class="stat-label">Độ tin cậy TB</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(139,92,246,0.12);color:#a78bfa;"><i class="fa-solid fa-stopwatch"></i></div>
+        <div class="stat-value" id="kpi-time">—</div>
+        <div class="stat-label">Thời gian xử lý TB</div>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+      <!-- Pie chart -->
+      <div class="chart-box">
+        <div class="chart-title"><i class="fa-solid fa-chart-pie" style="color:var(--accent);margin-right:6px;"></i> Phân bố loại giấy tờ</div>
+        <canvas id="pieChart" height="200"></canvas>
+      </div>
+      <!-- Line chart -->
+      <div class="chart-box">
+        <div class="chart-title"><i class="fa-solid fa-chart-line" style="color:var(--success);margin-right:6px;"></i> Xu hướng quét 7 ngày qua</div>
+        <canvas id="lineChart" height="200"></canvas>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end main layout -->
+
+<!-- ──────── JAVASCRIPT ──────── -->
+<script>
+  const API = '';  // same origin
+  let currentRecordId = null;
+  let currentResultData = null;
+  let cameraStream = null;
+  let searchTimer = null;
+  let historyPage = 0;
+  const PAGE_SIZE = 20;
+  let pieChartInst = null, lineChartInst = null;
+  let frontFile = null, backFile = null;
+  let sampleAutoIndex = 0;
+
+  // ─── MAIN TAB SWITCH ───
+  function switchMainTab(tab) {
+    ['scan','history','stats'].forEach(t => {
+      document.getElementById('tab-' + t).style.display = 'none';
+      const btn = document.getElementById('tab-btn-' + t);
+      if (btn) btn.classList.remove('active');
+    });
+    document.getElementById('tab-' + tab).style.display = tab === 'scan' ? 'flex' : (tab === 'history' ? 'flex' : 'block');
+    const b = document.getElementById('tab-btn-' + tab);
+    if (b) b.classList.add('active');
+    if (tab === 'history') loadHistory();
+    if (tab === 'stats')   loadStats();
+  }
+
+  // ─── SCAN SUB-TAB ───
+  function switchScanTab(tab) {
+    ['webcam','upload','sample'].forEach(t => {
+      document.getElementById('spane-' + t).classList.remove('active');
+      document.getElementById('stab-' + t).classList.remove('active');
+    });
+    document.getElementById('spane-' + tab).classList.add('active');
+    document.getElementById('stab-' + tab).classList.add('active');
+  }
+
+  // ─── CAMERA ───
+  async function enumerateCameras() {
+    try {
+      const devs = await navigator.mediaDevices.enumerateDevices();
+      const cams = devs.filter(d => d.kind === 'videoinput');
+      const sel = document.getElementById('camera-device-select');
+      sel.innerHTML = cams.map((c, i) =>
+        `<option value="${c.deviceId}">${c.label || '📷 Camera ' + (i+1)}</option>`
+      ).join('');
+    } catch(e) {}
+  }
+
+  let capturedImageBase64 = null;
+
+  async function toggleCamera() {
+    const video = document.getElementById('webcam-video');
+    const placeholder = document.getElementById('cam-placeholder');
+    const guideEl = document.getElementById('cam-guide-el');
+    const tipEl = document.getElementById('cam-tip');
+    const btnToggle = document.getElementById('btn-toggle-cam');
+    const btnCapturePhoto = document.getElementById('btn-capture-photo');
+
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(t => t.stop());
+      cameraStream = null;
+      video.srcObject = null;
+      retakePhoto();
+      placeholder.style.display = 'flex';
+      guideEl.style.display = 'none';
+      tipEl.style.display = 'none';
+      btnToggle.innerHTML = '<i class="fa-solid fa-power-off" style="color:var(--success);"></i> Bật cam';
+      btnCapturePhoto.disabled = true;
+      return;
+    }
+
+    try {
+      const deviceId = document.getElementById('camera-device-select').value;
+      const constraints = {
+        video: { width: { ideal: 1280 }, height: { ideal: 720 }, ...(deviceId ? { deviceId: { exact: deviceId } } : {}) },
+        audio: false
+      };
+      cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+      video.srcObject = cameraStream;
+      await video.play();
+      retakePhoto();
+      placeholder.style.display = 'none';
+      guideEl.style.display = 'block';
+      tipEl.style.display = 'block';
+      btnToggle.innerHTML = '<i class="fa-solid fa-stop" style="color:var(--danger);"></i> Tắt cam';
+      btnCapturePhoto.disabled = false;
+      await enumerateCameras();
+    } catch(err) {
+      showToast('error', 'Không thể mở Camera: ' + err.message);
+    }
+  }
+
+  function capturePhoto() {
+    if (!cameraStream) {
+      showToast('warning', 'Vui lòng bật webcam trước khi chụp!');
+      return;
+    }
+    const video = document.getElementById('webcam-video');
+    const canvas = document.getElementById('webcam-canvas');
+    canvas.width  = video.videoWidth  || 1280;
+    canvas.height = video.videoHeight || 720;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    flashScreen();
+
+    capturedImageBase64 = canvas.toDataURL('image/jpeg', 0.95);
+
+    // Freeze snapshot on screen
+    const snapImg = document.getElementById('webcam-snapshot-img');
+    snapImg.src = capturedImageBase64;
+    snapImg.style.display = 'block';
+    video.style.display = 'none';
+
+    // Show badge and hide guide laser
+    document.getElementById('snapshot-badge').style.display = 'flex';
+    document.getElementById('cam-guide-el').style.display = 'none';
+
+    // Switch control buttons to review mode
+    document.getElementById('cam-controls-live').style.display = 'none';
+    document.getElementById('cam-controls-review').style.display = 'flex';
+
+    showToast('info', '📸 Đã chụp ảnh thành công! Bấm "Trích xuất thông tin" để bắt đầu nhận diện.');
+  }
+
+  function retakePhoto() {
+    capturedImageBase64 = null;
+    const video = document.getElementById('webcam-video');
+    const snapImg = document.getElementById('webcam-snapshot-img');
+    if (snapImg) snapImg.style.display = 'none';
+    if (video) video.style.display = 'block';
+
+    const snapBadge = document.getElementById('snapshot-badge');
+    if (snapBadge) snapBadge.style.display = 'none';
+    const guideEl = document.getElementById('cam-guide-el');
+    if (cameraStream && guideEl) {
+      guideEl.style.display = 'block';
+    }
+
+    const ctrlLive = document.getElementById('cam-controls-live');
+    const ctrlReview = document.getElementById('cam-controls-review');
+    if (ctrlLive) ctrlLive.style.display = 'flex';
+    if (ctrlReview) ctrlReview.style.display = 'none';
+  }
+
+  async function extractCapturedPhoto() {
+    if (!capturedImageBase64) {
+      showToast('warning', 'Chưa có ảnh chụp để trích xuất!');
+      return;
+    }
+
+    const sideHint = document.getElementById('cam-side-select').value;
+    setLeftLoading(true, 'Đang trích xuất thông tin từ ảnh chụp...');
+
+    try {
+      const res = await fetch(`${API}/api/v1/ocr/scan-webcam`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image_base64: capturedImageBase64, side_hint: sideHint })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Lỗi trích xuất OCR');
+      renderResult(data);
+      showToast('success', `Trích xuất xong! Độ tin cậy: ${Math.round(data.overall_confidence*100)}%`);
+    } catch(err) {
+      showToast('error', 'Lỗi: ' + err.message);
+    } finally {
+      setLeftLoading(false);
+    }
+  }
+
+  // Backward compatible alias
+  async function captureAndScan() {
+    capturePhoto();
+    await extractCapturedPhoto();
+  }
+
+  // ─── FILE UPLOAD ───
+  let selectedFile = null;
+
+  function handleFileSelected(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    selectedFile = file;
+    const url = URL.createObjectURL(file);
+    document.getElementById('upload-thumb').src = url;
+    document.getElementById('upload-preview').style.display = 'flex';
+    document.getElementById('dropzone').style.display = 'none';
+  }
+
+  function handleDrop(e) {
+    e.preventDefault();
+    document.getElementById('dropzone').classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (!file || !file.type.startsWith('image/')) { showToast('error', 'Chỉ hỗ trợ file hình ảnh!'); return; }
+    selectedFile = file;
+    const url = URL.createObjectURL(file);
+    document.getElementById('upload-thumb').src = url;
+    document.getElementById('upload-preview').style.display = 'flex';
+    document.getElementById('dropzone').style.display = 'none';
+  }
+
+  function resetUpload() {
+    selectedFile = null;
+    document.getElementById('file-input').value = '';
+    document.getElementById('upload-thumb').src = '';
+    document.getElementById('upload-preview').style.display = 'none';
+    document.getElementById('dropzone').style.display = 'block';
+  }
+
+  async function scanUploadedFile() {
+    if (!selectedFile) return showToast('warning', 'Chưa chọn ảnh!');
+    const sideHint = document.getElementById('upload-side-select').value;
+    const fd = new FormData();
+    fd.append('file', selectedFile);
+    fd.append('side_hint', sideHint);
+
+    setLeftLoading(true, 'Đang tải ảnh & quét OCR...');
+    try {
+      const res = await fetch(`${API}/api/v1/ocr/scan`, { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Lỗi quét file');
+      renderResult(data);
+      showToast('success', `Quét xong! Độ tin cậy: ${Math.round(data.overall_confidence*100)}%`);
+    } catch(err) {
+      showToast('error', 'Lỗi: ' + err.message);
+    } finally {
+      setLeftLoading(false);
+    }
+  }
+
+  // ─── SCAN BOTH ───
+  function handleFrontFile(e) {
+    frontFile = e.target.files[0];
+    if (!frontFile) return;
+    const url = URL.createObjectURL(frontFile);
+    document.getElementById('front-thumb').src = url;
+    document.getElementById('front-thumb-placeholder').style.display = 'none';
+  }
+  function handleBackFile(e) {
+    backFile = e.target.files[0];
+    if (!backFile) return;
+    const url = URL.createObjectURL(backFile);
+    document.getElementById('back-thumb').src = url;
+    document.getElementById('back-thumb-placeholder').style.display = 'none';
+  }
+
+  async function scanBothSides() {
+    if (!frontFile || !backFile) { showToast('warning', 'Vui lòng chọn cả ảnh mặt trước và mặt sau!'); return; }
+    const fd = new FormData();
+    fd.append('front_file', frontFile);
+    fd.append('back_file', backFile);
+
+    setLeftLoading(true, 'Đang quét & ghép 2 mặt...');
+    try {
+      const res = await fetch(`${API}/api/v1/ocr/scan-both`, { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Lỗi ghép 2 mặt');
+      renderResult(data);
+      showToast('success', `Ghép 2 mặt thành công! Độ tin cậy: ${Math.round(data.overall_confidence*100)}%`);
+    } catch(err) {
+      showToast('error', 'Lỗi: ' + err.message);
+    } finally {
+      setLeftLoading(false);
+    }
+  }
+
+  // ─── SAMPLE OCR ───
+  async function runSampleOCR() {
+    const idx = parseInt(document.getElementById('sample-index').value) || 0;
+    const fd = new FormData();
+    fd.append('sample_index', idx);
+
+    setLeftLoading(true, `Đang quét mẫu #${idx}...`);
+    try {
+      const res = await fetch(`${API}/api/v1/ocr/demo-sample`, { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Lỗi quét mẫu');
+      renderResult(data);
+      showToast('success', `Mẫu #${idx} quét xong! Tin cậy: ${Math.round(data.overall_confidence*100)}%`);
+    } catch(err) {
+      showToast('error', 'Lỗi mẫu #' + idx + ': ' + err.message);
+    } finally {
+      setLeftLoading(false);
+    }
+  }
+
+  function runAllSamplesDemo() {
+    const el = document.getElementById('sample-index');
+    const cur = parseInt(el.value) || 0;
+    el.value = (cur + 1) % 48;
+    runSampleOCR();
+  }
+
+  // ─── RENDER RESULT ───
+  function renderResult(data) {
+    currentResultData = data;
+    currentRecordId   = data.id;
+
+    const f = data.fields || {};
+    const g = k => (f[k] || {}).value || '';
+
+    // Show/hide sections
+    document.getElementById('empty-state').style.display = 'none';
+    document.getElementById('result-form').style.display = 'block';
+    document.getElementById('confirm-bar').style.display = 'flex';
+    document.getElementById('btn-print').style.display = 'inline-flex';
+
+    // Reset verified state
+    document.getElementById('verified-banner').classList.remove('show');
+
+    // Fill fields
+    document.getElementById('f-id-number').value  = g('id_number');
+    document.getElementById('f-full-name').value  = g('full_name');
+    document.getElementById('f-dob').value         = g('date_of_birth');
+    document.getElementById('f-nationality').value = g('nationality') || 'Việt Nam';
+    document.getElementById('f-origin').value      = g('place_of_origin');
+    document.getElementById('f-residence').value   = g('place_of_residence');
+    document.getElementById('f-expiry').value      = g('date_of_expiry');
+    document.getElementById('f-notes').value       = '';
+
+    // Gender select
+    const genderSel = document.getElementById('f-gender');
+    const gv = g('gender');
+    genderSel.value = ['Nam','Nữ'].includes(gv) ? gv : '';
+
+    // Back section
+    const hasBack = g('date_of_issue') || g('issuing_authority') || g('identifying_features');
+    const backSection = document.getElementById('back-section');
+    if (hasBack || data.side === 'BACK' || data.side === 'BOTH') {
+      backSection.style.display = 'block';
+      document.getElementById('f-issue-date').value = g('date_of_issue');
+      document.getElementById('f-authority').value  = g('issuing_authority');
+      document.getElementById('f-features').value   = g('identifying_features');
+      document.getElementById('f-mrz').value        = g('mrz_code');
+    } else {
+      backSection.style.display = 'none';
+    }
+
+    // Confidence badge
+    const confPct = Math.round((data.overall_confidence || 0) * 100);
+    const confBadge = document.getElementById('conf-badge');
+    confBadge.style.display = 'inline-block';
+    confBadge.textContent = confPct + '%';
+    confBadge.className = 'conf-badge ' + (confPct >= 85 ? 'conf-high' : confPct >= 60 ? 'conf-medium' : 'conf-low');
+
+    // Processing time
+    const ptBadge = document.getElementById('proc-time-badge');
+    ptBadge.style.display = 'inline-block';
+    ptBadge.textContent = '⏱ ' + data.processing_time_sec + 's';
+
+    // Doc type badge
+    document.getElementById('doc-type-badge').textContent = formatDocType(data.document_type);
+    document.getElementById('card-side-label').textContent = formatSide(data.side);
+
+    // Subtitle
+    document.getElementById('result-subtitle').textContent =
+      `${formatDocType(data.document_type)} — ${formatSide(data.side)} — ${data.created_at || ''}`;
+
+    // Confirm name preview
+    document.getElementById('confirm-name-preview').textContent = g('full_name') || '—';
+
+    // Expiry warning
+    const expWarn = document.getElementById('expiry-warning-pill');
+    const expVal  = g('date_of_expiry');
+    if (expVal && expVal !== 'Không thời hạn') {
+      try {
+        const parts = expVal.split('/');
+        const expDate = new Date(parts[2], parts[1]-1, parts[0]);
+        if (expDate < new Date()) expWarn.style.display = 'inline-flex';
+        else expWarn.style.display = 'none';
+      } catch(e) { expWarn.style.display = 'none'; }
+    } else {
+      expWarn.style.display = 'none';
+    }
+
+    // Warnings
+    const warnBox = document.getElementById('warnings-box');
+    if (data.warnings && data.warnings.length > 0) {
+      warnBox.style.display = 'block';
+      warnBox.innerHTML = data.warnings.map(w => `<p>${w}</p>`).join('');
+    } else {
+      warnBox.style.display = 'none';
+    }
+
+    // Scroll to top
+    document.getElementById('result-scroll').scrollTop = 0;
+  }
+
+  function formatDocType(dt) {
+    const map = { CCCD_CHIP: 'CCCD Chip', CCCD_BARCODE: 'CCCD Mã vạch', CMND_12: 'CMND 12 số', CMND_9: 'CMND 9 số', UNKNOWN: 'Không xác định' };
+    return map[dt] || dt;
+  }
+  function formatSide(s) {
+    const map = { FRONT: 'Mặt trước', BACK: 'Mặt sau', BOTH: 'Cả 2 mặt' };
+    return map[s] || s;
+  }
+
+  // ─── CONFIRM & SAVE ───
+  async function confirmAndSave() {
+    if (!currentRecordId) return showToast('warning', 'Chưa có hồ sơ nào để xác nhận!');
+
+    const payload = {
+      id_number:          document.getElementById('f-id-number').value.trim(),
+      full_name:          document.getElementById('f-full-name').value.trim(),
+      date_of_birth:      document.getElementById('f-dob').value.trim(),
+      gender:             document.getElementById('f-gender').value,
+      nationality:        document.getElementById('f-nationality').value.trim(),
+      place_of_origin:    document.getElementById('f-origin').value.trim(),
+      place_of_residence: document.getElementById('f-residence').value.trim(),
+      date_of_expiry:     document.getElementById('f-expiry').value.trim(),
+      date_of_issue:      document.getElementById('f-issue-date').value.trim(),
+      issuing_authority:  document.getElementById('f-authority').value.trim(),
+      identifying_features: document.getElementById('f-features').value.trim(),
+      is_verified:        1,
+      notes:              document.getElementById('f-notes').value.trim()
+    };
+
+    try {
+      const res = await fetch(`${API}/api/v1/ocr/history/${currentRecordId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Lỗi lưu dữ liệu');
+
+      // Show verified state
+      const now = new Date().toLocaleString('vi-VN');
+      const verifiedBanner = document.getElementById('verified-banner');
+      verifiedBanner.classList.add('show');
+      document.getElementById('verified-at-text').textContent = 'Xác nhận lúc ' + now;
+
+      // Mark all inputs as verified
+      document.querySelectorAll('#result-form .field-input').forEach(el => el.classList.add('verified'));
+
+      // Show verification modal
+      showVerificationModal(payload, now);
+
+      showToast('success', 'Đã xác nhận và lưu thành công!');
+      loadHistory();
+    } catch(err) {
+      showToast('error', 'Lỗi lưu: ' + err.message);
+    }
+  }
+
+  function showVerificationModal(payload, at) {
+    const summaryEl = document.getElementById('v-summary');
+    summaryEl.innerHTML = `
+      <div class="v-row"><span class="v-key">Số CCCD/CMND</span><span class="v-value font-mono">${payload.id_number || '—'}</span></div>
+      <div class="v-row"><span class="v-key">Họ và tên</span><span class="v-value text-amber">${payload.full_name || '—'}</span></div>
+      <div class="v-row"><span class="v-key">Ngày sinh</span><span class="v-value">${payload.date_of_birth || '—'}</span></div>
+      <div class="v-row"><span class="v-key">Giới tính</span><span class="v-value">${payload.gender || '—'}</span></div>
+      <div class="v-row"><span class="v-key">Thời gian xác nhận</span><span class="v-value">${at}</span></div>
+    `;
+    document.getElementById('verification-overlay').classList.add('show');
+  }
+
+  function closeVerificationModal() {
+    document.getElementById('verification-overlay').classList.remove('show');
+  }
+
+  // ─── RESET ───
+  function resetScan() {
+    currentRecordId = null;
+    currentResultData = null;
+    retakePhoto();
+    document.getElementById('empty-state').style.display = 'flex';
+    document.getElementById('result-form').style.display = 'none';
+    document.getElementById('confirm-bar').style.display = 'none';
+    document.getElementById('conf-badge').style.display = 'none';
+    document.getElementById('proc-time-badge').style.display = 'none';
+    document.getElementById('btn-print').style.display = 'none';
+    document.getElementById('result-subtitle').textContent = 'Chưa có kết quả — Hãy quét thẻ từ bên trái';
+    document.querySelectorAll('#result-form .field-input').forEach(el => el.classList.remove('verified'));
+    showToast('info', 'Đã xóa kết quả. Sẵn sàng quét mới.');
+  }
+
+  // ─── COPY FIELD ───
+  function copyField(id, label) {
+    const val = document.getElementById(id).value;
+    if (!val) return showToast('warning', 'Ô này chưa có dữ liệu!');
+    navigator.clipboard.writeText(val).then(() => showToast('success', `Đã sao chép ${label || ''}: ${val}`));
+  }
+
+  // ─── EXPORT ───
+  function exportCurrentJSON() {
+    if (!currentResultData) return showToast('warning', 'Chưa có dữ liệu!');
+    const out = {
+      id: currentRecordId,
+      document_type: currentResultData.document_type,
+      side: currentResultData.side,
+      overall_confidence: currentResultData.overall_confidence,
+      scanned_at: currentResultData.created_at,
+      fields: {
+        id_number:          document.getElementById('f-id-number').value,
+        full_name:          document.getElementById('f-full-name').value,
+        date_of_birth:      document.getElementById('f-dob').value,
+        gender:             document.getElementById('f-gender').value,
+        nationality:        document.getElementById('f-nationality').value,
+        place_of_origin:    document.getElementById('f-origin').value,
+        place_of_residence: document.getElementById('f-residence').value,
+        date_of_expiry:     document.getElementById('f-expiry').value,
+        date_of_issue:      document.getElementById('f-issue-date').value,
+        issuing_authority:  document.getElementById('f-authority').value,
+        identifying_features: document.getElementById('f-features').value,
+        notes:              document.getElementById('f-notes').value
+      }
+    };
+    const blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `ocr_${out.fields.id_number || 'result'}.json`;
+    a.click();
+  }
+
+  function exportCurrentCSV() {
+    if (!currentResultData) return showToast('warning', 'Chưa có dữ liệu!');
+    const rows = [
+      ['Số CCCD/CMND', document.getElementById('f-id-number').value],
+      ['Họ và tên',    document.getElementById('f-full-name').value],
+      ['Ngày sinh',    document.getElementById('f-dob').value],
+      ['Giới tính',    document.getElementById('f-gender').value],
+      ['Quốc tịch',    document.getElementById('f-nationality').value],
+      ['Quê quán',     document.getElementById('f-origin').value],
+      ['Nơi thường trú', document.getElementById('f-residence').value],
+      ['Có giá trị đến', document.getElementById('f-expiry').value],
+      ['Ngày cấp',     document.getElementById('f-issue-date').value],
+      ['Nơi cấp',      document.getElementById('f-authority').value],
+      ['Đặc điểm nhận dạng', document.getElementById('f-features').value],
+    ];
+    const csv = '\ufeff' + rows.map(r => `"${r[0]}","${(r[1]||'').replace(/"/g,'""')}"`).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `ocr_${document.getElementById('f-id-number').value || 'result'}.csv`;
+    a.click();
+  }
+
+  function printRecord() {
+    if (!currentResultData) return;
+    const name = document.getElementById('f-full-name').value || '—';
+    const id   = document.getElementById('f-id-number').value || '—';
+    const dob  = document.getElementById('f-dob').value || '—';
+    const sex  = document.getElementById('f-gender').value || '—';
+    const nat  = document.getElementById('f-nationality').value || '—';
+    const ori  = document.getElementById('f-origin').value || '—';
+    const res  = document.getElementById('f-residence').value || '—';
+    const exp  = document.getElementById('f-expiry').value || '—';
+    const iss  = document.getElementById('f-issue-date').value || '—';
+    const auth = document.getElementById('f-authority').value || '—';
+    const feat = document.getElementById('f-features').value || '—';
+    const docT = formatDocType(currentResultData.document_type);
+    const winP = window.open('','_blank','width=800,height=600');
+    winP.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>In hồ sơ CCCD</title>
+    <style>body{font-family:'Be Vietnam Pro',Arial,sans-serif;margin:30px;color:#111;}
+    h2{margin-bottom:6px;font-size:18px;} .id{font-size:22px;font-weight:800;letter-spacing:3px;color:#1d4ed8;margin:10px 0;}
+    table{border-collapse:collapse;width:100%;font-size:13px;} td{padding:8px 10px;border:1px solid #ddd;}
+    td:first-child{font-weight:700;background:#f5f5f5;width:35%;}
+    .footer{margin-top:20px;font-size:11px;color:#888;text-align:center;}</style></head><body>
+    <h2>THÔNG TIN ${docT.toUpperCase()}</h2>
+    <div class="id">${id}</div>
+    <table>
+      <tr><td>Họ và tên</td><td>${name}</td></tr>
+      <tr><td>Ngày sinh</td><td>${dob}</td></tr>
+      <tr><td>Giới tính</td><td>${sex}</td></tr>
+      <tr><td>Quốc tịch</td><td>${nat}</td></tr>
+      <tr><td>Quê quán</td><td>${ori}</td></tr>
+      <tr><td>Nơi thường trú</td><td>${res}</td></tr>
+      <tr><td>Có giá trị đến</td><td>${exp}</td></tr>
+      <tr><td>Ngày cấp</td><td>${iss}</td></tr>
+      <tr><td>Nơi cấp</td><td>${auth}</td></tr>
+      <tr><td>Đặc điểm nhận dạng</td><td>${feat}</td></tr>
+    </table>
+    <div class="footer">Xuất từ Hệ thống OCR CCCD — SIC AI Capstone Project 2026 | ${new Date().toLocaleString('vi-VN')}</div>
+    </body></html>`);
+    winP.document.close();
+    winP.focus();
+    winP.print();
+  }
+
+  // ─── HISTORY ───
+  let searchQuery = '';
+
+  function debounceSearch() {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => {
+      historyPage = 0;
+      searchQuery = document.getElementById('history-search').value;
+      loadHistory();
+    }, 300);
+  }
+
+  async function loadHistory() {
+    const search = searchQuery || '';
+    const docType = document.getElementById('filter-doc-type').value;
+    const side    = document.getElementById('filter-side').value;
+    const offset  = historyPage * PAGE_SIZE;
+    const url     = `${API}/api/v1/ocr/history?limit=${PAGE_SIZE}&offset=${offset}${search?'&search='+encodeURIComponent(search):''}${docType?'&document_type='+docType:''}${side?'&side='+side:''}`;
+
+    try {
+      const res  = await fetch(url);
+      const data = await res.json();
+      renderHistoryTable(data.items || [], data.total || 0);
+      document.getElementById('history-count-badge').textContent = data.total || 0;
+    } catch(err) {
+      console.error(err);
+    }
+  }
+
+  function renderHistoryTable(items, total) {
+    const tbody = document.getElementById('history-tbody');
+    if (!items.length) {
+      tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:30px;color:var(--text-dim);">Chưa có bản ghi nào</td></tr>`;
+    } else {
+      tbody.innerHTML = items.map((r, i) => `
+        <tr onclick="viewHistoryDetail('${r.id}')">
+          <td class="text-muted">${historyPage * PAGE_SIZE + i + 1}</td>
+          <td class="text-muted font-mono" style="font-size:11px;">${(r.created_at||'').replace('T',' ').substring(0,16)}</td>
+          <td><span style="background:rgba(99,102,241,0.12);color:#a5b4fc;border:1px solid rgba(99,102,241,0.2);padding:2px 7px;border-radius:99px;font-size:10px;font-weight:700;">${formatDocType(r.document_type)}</span></td>
+          <td class="font-mono font-bold text-accent">${r.id_number || '<span style="color:var(--text-dim)">—</span>'}</td>
+          <td class="font-bold text-amber">${r.full_name || '<span style="color:var(--text-dim)">—</span>'}</td>
+          <td class="text-muted">${r.date_of_birth || '—'}</td>
+          <td class="text-muted" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.place_of_residence||''}">${r.place_of_residence || '—'}</td>
+          <td><span class="${(r.confidence_score||0) >= 0.85 ? 'text-success' : (r.confidence_score||0) >= 0.60 ? 'text-warning' : 'text-danger'} font-bold">${Math.round((r.confidence_score||0)*100)}%</span></td>
+          <td>${r.is_verified ? '<span style="color:var(--success);font-size:11px;font-weight:700;">✓ Đã duyệt</span>' : '<span style="color:var(--text-dim);font-size:11px;">Chờ duyệt</span>'}</td>
+          <td onclick="event.stopPropagation()" style="white-space:nowrap;">
+            <button class="btn btn-ghost" style="padding:4px 8px;font-size:11px;" onclick="viewHistoryDetail('${r.id}')"><i class="fa-solid fa-eye"></i></button>
+            <button class="btn btn-danger" style="padding:4px 8px;font-size:11px;margin-left:3px;" onclick="deleteRecord('${r.id}')"><i class="fa-solid fa-trash"></i></button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // Pagination
+    const totalPages = Math.ceil(total / PAGE_SIZE);
+    document.getElementById('pagination-info').textContent = `Tổng: ${total} bản ghi | Trang ${historyPage + 1}/${totalPages || 1}`;
+    const pagBtns = document.getElementById('pagination-btns');
+    pagBtns.innerHTML = '';
+    for (let i = 0; i < totalPages && i < 10; i++) {
+      const btn = document.createElement('button');
+      btn.className = 'page-btn' + (i === historyPage ? ' active' : '');
+      btn.textContent = i + 1;
+      btn.onclick = () => { historyPage = i; loadHistory(); };
+      pagBtns.appendChild(btn);
+    }
+  }
+
+  async function viewHistoryDetail(id) {
+    try {
+      const res = await fetch(`${API}/api/v1/ocr/history/${id}`);
+      const json = await res.json();
+      if (!json.data) return;
+      const r = json.data;
+      // Map to OCR response format
+      const ocrData = {
+        id: r.id,
+        document_type: r.document_type,
+        side: r.side,
+        overall_confidence: r.confidence_score,
+        processing_time_sec: r.processing_time_sec,
+        created_at: r.created_at,
+        warnings: [],
+        fields: {
+          id_number:           { value: r.id_number },
+          full_name:           { value: r.full_name },
+          date_of_birth:       { value: r.date_of_birth },
+          gender:              { value: r.gender },
+          nationality:         { value: r.nationality },
+          place_of_origin:     { value: r.place_of_origin },
+          place_of_residence:  { value: r.place_of_residence },
+          date_of_expiry:      { value: r.date_of_expiry },
+          date_of_issue:       { value: r.date_of_issue },
+          issuing_authority:   { value: r.issuing_authority },
+          identifying_features:{ value: r.identifying_features },
+          mrz_code:            { value: r.mrz_code }
+        }
+      };
+      switchMainTab('scan');
+      renderResult(ocrData);
+      // Mark verified if already verified
+      if (r.is_verified) {
+        document.getElementById('verified-banner').classList.add('show');
+        document.getElementById('verified-at-text').textContent = 'Đã xác nhận trước đó';
+        document.querySelectorAll('#result-form .field-input').forEach(el => el.classList.add('verified'));
+      }
+      document.getElementById('f-notes').value = r.notes || '';
+    } catch(err) {
+      showToast('error', 'Lỗi: ' + err.message);
+    }
+  }
+
+  async function deleteRecord(id) {
+    if (!confirm('Xóa bản ghi này?')) return;
+    try {
+      const res = await fetch(`${API}/api/v1/ocr/history/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Lỗi xóa');
+      showToast('success', 'Đã xóa bản ghi!');
+      if (currentRecordId === id) resetScan();
+      loadHistory();
+    } catch(err) {
+      showToast('error', 'Lỗi: ' + err.message);
+    }
+  }
+
+  // ─── STATS ───
+  async function loadStats() {
+    try {
+      const res = await fetch(`${API}/api/v1/ocr/stats`);
+      const data = await res.json();
+
+      document.getElementById('kpi-total').textContent = data.total_scans.toLocaleString();
+      document.getElementById('kpi-today').textContent = data.today_scans.toLocaleString();
+      document.getElementById('kpi-conf').textContent  = Math.round(data.average_confidence * 100) + '%';
+      document.getElementById('kpi-time').textContent  = data.average_processing_time_sec.toFixed(2) + 's';
+
+      // Pie chart
+      const typeData = data.distribution_by_type;
+      const typeLabels = Object.keys(typeData).map(k => formatDocType(k));
+      const typeVals   = Object.values(typeData);
+      const colors = ['#3b82f6','#10b981','#f59e0b','#a78bfa','#f87171'];
+
+      if (pieChartInst) pieChartInst.destroy();
+      pieChartInst = new Chart(document.getElementById('pieChart'), {
+        type: 'doughnut',
+        data: { labels: typeLabels, datasets: [{ data: typeVals, backgroundColor: colors, borderWidth: 2, borderColor: '#0d1424' }] },
+        options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', font: { family: 'Be Vietnam Pro', size: 11 } } } } }
+      });
+
+      // Line chart
+      const trend = data.recent_daily_trends;
+      if (lineChartInst) lineChartInst.destroy();
+      lineChartInst = new Chart(document.getElementById('lineChart'), {
+        type: 'line',
+        data: {
+          labels: trend.map(t => t.date),
+          datasets: [{
+            label: 'Lượt quét', data: trend.map(t => t.count),
+            borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)',
+            tension: 0.4, fill: true, pointBackgroundColor: '#10b981', pointRadius: 4
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: '#64748b', font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.05)' } },
+            y: { ticks: { color: '#64748b', font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.05)' } }
+          }
+        }
+      });
+    } catch(err) {
+      console.error('Stats error:', err);
+    }
+  }
+
+  // ─── HELPERS ───
+  function setLeftLoading(show, text) {
+    const el = document.getElementById('left-loading');
+    el.classList.toggle('show', show);
+    if (text) document.getElementById('left-loading-text').textContent = text;
+  }
+
+  function flashScreen() {
+    const el = document.getElementById('flash-overlay');
+    el.classList.remove('flash');
+    void el.offsetWidth;
+    el.classList.add('flash');
+  }
+
+  function showToast(type, msg) {
+    const icons = { success:'fa-check-circle', error:'fa-xmark-circle', info:'fa-info-circle', warning:'fa-triangle-exclamation' };
+    const colors = { success:'#34d399', error:'#f87171', info:'#60a5fa', warning:'#fbbf24' };
+    const container = document.getElementById('toast-container');
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    el.innerHTML = `<i class="fa-solid ${icons[type]}" style="color:${colors[type]};font-size:15px;flex-shrink:0;"></i> ${msg}`;
+    container.appendChild(el);
+    setTimeout(() => el.remove(), 3500);
+  }
+
+  // ─── SAMPLE QUICK PICKER ───
+  function buildSamplePicker() {
+    const el = document.getElementById('sample-quick-picker');
+    for (let i = 0; i < 48; i++) {
+      const btn = document.createElement('button');
+      btn.className = 'btn btn-ghost';
+      btn.style.cssText = 'padding:4px 10px;font-size:10.5px;min-width:36px;border-radius:6px;';
+      btn.textContent = i;
+      btn.onclick = () => {
+        document.getElementById('sample-index').value = i;
+        runSampleOCR();
+      };
+      el.appendChild(btn);
+    }
+  }
+
+  // ─── INIT ───
+  document.addEventListener('DOMContentLoaded', () => {
+    buildSamplePicker();
+    loadHistory();
+    // Initial stats load
+    loadStats();
+
+    // Handle name input to update confirm preview
+    document.getElementById('f-full-name').addEventListener('input', function() {
+      document.getElementById('confirm-name-preview').textContent = this.value || '—';
+    });
+  });
+</script>
+</body>
+</html>
