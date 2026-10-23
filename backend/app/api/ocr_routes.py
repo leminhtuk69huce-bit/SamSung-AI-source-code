@@ -37,13 +37,14 @@ def process_single_image(image_bytes: bytes, filename_prefix: str = "scan", side
     extracted = extract_fields(raw_boxes, side_hint=side_hint)
     elapsed = round(time.time() - start_time, 2)
 
-    # 4. Save image to storage
+    # 4. Save image to storage safely
     record_id = str(uuid.uuid4())
     img_name = f"{filename_prefix}_{record_id}.jpg"
     img_path = STORAGE_DIR / img_name
-    save_image_to_storage(image, img_path)
+    saved_path = save_image_to_storage(image, img_path)
+    img_url = f"/storage/{img_name}" if saved_path else None
 
-    return record_id, extracted, raw_boxes, elapsed, f"/storage/{img_name}"
+    return record_id, extracted, raw_boxes, elapsed, img_url
 
 def process_webcam_image(image_base64: str, side_hint: str = "auto") -> tuple:
     """Core helper to decode base64 webcam frame, run OCR and extract fields."""
@@ -60,9 +61,10 @@ def process_webcam_image(image_base64: str, side_hint: str = "auto") -> tuple:
     record_id = str(uuid.uuid4())
     img_name = f"webcam_{record_id}.jpg"
     img_path = STORAGE_DIR / img_name
-    save_image_to_storage(image, img_path)
+    saved_path = save_image_to_storage(image, img_path)
+    img_url = f"/storage/{img_name}" if saved_path else None
 
-    return record_id, extracted, raw_boxes, elapsed, f"/storage/{img_name}"
+    return record_id, extracted, raw_boxes, elapsed, img_url
 
 def process_sample_image(front_img_path: Path, target_folder_name: str) -> tuple:
     """Core helper to load a sample card image from disk, run OCR and extract fields."""
@@ -78,9 +80,10 @@ def process_sample_image(front_img_path: Path, target_folder_name: str) -> tuple
 
     record_id = str(uuid.uuid4())
     img_name = f"sample_{target_folder_name}_{record_id}.jpg"
-    save_image_to_storage(image, STORAGE_DIR / img_name)
+    saved_path = save_image_to_storage(image, STORAGE_DIR / img_name)
+    img_url = f"/storage/{img_name}" if saved_path else None
 
-    return record_id, extracted, raw_boxes, elapsed, f"/storage/{img_name}"
+    return record_id, extracted, raw_boxes, elapsed, img_url
 
 @router.post("/scan", response_model=OCRScanResponse, summary="Quét ảnh CCCD/CMND tải lên (File upload)")
 async def scan_file(

@@ -70,18 +70,36 @@ def enhance_image(image: np.ndarray) -> np.ndarray:
     except Exception:
         return image
 
-def save_image_to_storage(image: np.ndarray, destination_path: Path) -> str:
-    """Saves an OpenCV BGR image safely to disk with Unicode path support."""
-    destination_path.parent.mkdir(parents=True, exist_ok=True)
-    ext = destination_path.suffix.lower()
-    if not ext:
-        ext = ".jpg"
+def save_image_to_storage(image: np.ndarray, destination_path: Path) -> Optional[str]:
+    """
+    Saves an OpenCV BGR image safely to disk with Unicode path support.
+    Resilient: catches any permission or disk errors and tries fallbacks,
+    never throws an unhandled exception that disrupts the OCR pipeline.
+    """
+    try:
+        destination_path = Path(destination_path)
+        ext = destination_path.suffix.lower() or ".jpg"
         destination_path = destination_path.with_suffix(ext)
+        destination_path.parent.mkdir(parents=True, exist_ok=True)
         
-    success, encoded_img = cv2.imencode(ext, image)
-    if not success:
-        raise IOError(f"Lỗi mã hóa ảnh để lưu: {destination_path}")
-        
-    with open(destination_path, "wb") as f:
-        f.write(encoded_img.tobytes())
-    return str(destination_path)
+        success, encoded_img = cv2.imencode(ext, image)
+        if not success:
+            return None
+            
+        with open(destination_path, "wb") as f:
+            f.write(encoded_img.tobytes())
+        return str(destination_path)
+    except Exception as e:
+        print(f"⚠️ [STORAGE] Lưu ý: Không thể lưu ảnh vào {destination_path}: {e}")
+        try:
+            import tempfile
+            import os
+            fallback_dir = Path(os.environ.get("LOCALAPPDATA", tempfile.gettempdir())) / "OCR_CCCD" / "storage"
+            fallback_dir.mkdir(parents=True, exist_ok=True)
+            fallback_path = fallback_dir / destination_path.name
+            with open(fallback_path, "wb") as f:
+                f.write(encoded_img.tobytes())
+            return str(fallback_path)
+        except Exception:
+            return None
+
