@@ -285,14 +285,169 @@
       margin: 8px 12px;
     }
 
-    /* ───── CAM CONTROLS ───── */
-    .cam-controls {
+    /* ───── CAM CONTROLS REFINED & RESPONSIVE ───── */
+    .cam-controls-container {
       padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border);
+    }
+
+    .cam-ctrl-row {
       display: flex;
       gap: 8px;
       align-items: center;
-      background: var(--bg-surface);
+      width: 100%;
+    }
+
+    .cam-mode-selector {
+      display: flex;
+      background: var(--bg-base);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 3px;
+      gap: 4px;
+      width: 100%;
+    }
+
+    .cam-mode-btn {
+      flex: 1;
+      padding: 7px 10px;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--text-muted);
+      border-radius: 6px;
+      border: 1px solid transparent;
+      background: transparent;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+    .cam-mode-btn:hover {
+      color: var(--text-primary);
+      background: var(--bg-hover);
+    }
+    .cam-mode-btn.active {
+      background: rgba(59,130,246,0.18);
+      color: #60a5fa;
+      border-color: rgba(59,130,246,0.4);
+      box-shadow: 0 0 10px rgba(59,130,246,0.2);
+    }
+
+    .cam-step-banner {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: rgba(59,130,246,0.12);
+      border: 1px solid rgba(59,130,246,0.3);
+      border-radius: var(--radius-sm);
+      font-size: 11.5px;
+      font-weight: 600;
+      color: #93c5fd;
+      line-height: 1.4;
+    }
+    .cam-step-banner.step-back {
+      background: rgba(168,85,247,0.12);
+      border-color: rgba(168,85,247,0.35);
+      color: #d8b4fe;
+    }
+    .cam-step-banner.step-done {
+      background: rgba(16,185,129,0.12);
+      border-color: rgba(16,185,129,0.35);
+      color: #6ee7b7;
+    }
+
+    /* Dual thumbnails grid */
+    .dual-thumbs-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      padding: 10px 12px;
+      background: var(--bg-card);
       border-top: 1px solid var(--border);
+    }
+
+    .dual-thumb-box {
+      border: 1px dashed var(--border-light);
+      border-radius: var(--radius-sm);
+      background: var(--bg-surface);
+      height: 94px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.2s ease;
+    }
+    .dual-thumb-box.active-slot {
+      border-color: var(--accent);
+      box-shadow: 0 0 12px var(--accent-glow);
+    }
+    .dual-thumb-box.has-image {
+      border-style: solid;
+      border-color: rgba(16,185,129,0.45);
+    }
+
+    .dual-thumb-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .dual-thumb-overlay {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      background: linear-gradient(to top, rgba(7,11,20,0.92) 0%, rgba(7,11,20,0.6) 80%, transparent 100%);
+      padding: 4px 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 5;
+    }
+
+    .dual-thumb-tag {
+      font-size: 10px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .retake-mini-btn {
+      background: rgba(239,68,68,0.2);
+      border: 1px solid rgba(239,68,68,0.4);
+      color: #fca5a5;
+      border-radius: 4px;
+      padding: 2px 7px;
+      font-size: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      transition: all 0.15s;
+    }
+    .retake-mini-btn:hover {
+      background: rgba(239,68,68,0.35);
+      color: #fff;
+    }
+
+    /* Backward compat .cam-controls */
+    .cam-controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      width: 100%;
+      flex-wrap: wrap;
     }
 
     /* ───── BUTTONS ───── */
@@ -938,7 +1093,7 @@
   <!-- ── SCAN TAB (main scanner + result side-by-side) ── -->
   <div id="tab-scan" style="flex:1;overflow:hidden;display:flex;">
     <!-- LEFT: Input panel -->
-    <div class="left-panel" style="flex-shrink:0; width:440px; position:relative;">
+    <div class="left-panel" style="flex-shrink:0; width:450px; position:relative;">
       <!-- Sub-tabs -->
       <div class="scan-tabs">
         <div class="scan-tab active" id="stab-webcam" onclick="switchScanTab('webcam')">
@@ -954,8 +1109,20 @@
 
       <!-- WEBCAM PANE -->
       <div class="scan-pane active" id="spane-webcam">
+        <!-- Mode Switcher: 2 Mặt vs 1 Mặt -->
+        <div style="padding:10px 12px 6px; flex-shrink:0; background:var(--bg-card);">
+          <div class="cam-mode-selector">
+            <button class="cam-mode-btn active" id="btn-mode-both" onclick="switchWebcamMode('both')">
+              <i class="fa-solid fa-clone"></i> Quét 2 mặt CCCD (Khuyên dùng)
+            </button>
+            <button class="cam-mode-btn" id="btn-mode-single" onclick="switchWebcamMode('single')">
+              <i class="fa-solid fa-id-card"></i> Quét 1 mặt nhanh
+            </button>
+          </div>
+        </div>
+
         <!-- Camera view -->
-        <div class="cam-wrapper" id="cam-wrapper" style="height:290px; flex-shrink:0; position:relative; overflow:hidden;">
+        <div class="cam-wrapper" id="cam-wrapper" style="height:270px; flex-shrink:0; position:relative; overflow:hidden;">
           <video id="webcam-video" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;display:block;"></video>
           <img id="webcam-snapshot-img" style="display:none; width:100%; height:100%; object-fit:contain; background:#0b1120;" alt="Snapshot">
           <canvas id="webcam-canvas" style="display:none;"></canvas>
@@ -980,52 +1147,116 @@
           <div class="cam-placeholder" id="cam-placeholder">
             <i class="fa-solid fa-video-slash"></i>
             <p>Webcam chưa được bật</p>
-            <small style="font-size:11px; color:var(--text-dim);">Bấm "Bật Webcam" bên dưới</small>
+            <small style="font-size:11px; color:var(--text-dim);">Bấm "Bật cam" bên dưới để bắt đầu quét</small>
           </div>
         </div>
 
-        <!-- Cam tip -->
-        <div class="cam-tip" id="cam-tip" style="display:none;">
-          <i class="fa-solid fa-info-circle"></i> Đặt thẻ CCCD vào khung ngắm, căn chỉnh rõ nét rồi nhấn <strong>"Chụp ảnh"</strong>.
-        </div>
-
-        <!-- Camera controls: LIVE MODE -->
-        <div class="cam-controls" id="cam-controls-live" style="flex-shrink:0;">
-          <select class="cam-select" id="camera-device-select" style="flex:1; max-width:140px;">
-            <option value="">📷 Webcam mặc định</option>
-          </select>
-          <select class="cam-select" id="cam-side-select" style="flex:1; max-width:130px;">
-            <option value="auto">Tự động phát hiện</option>
-            <option value="front">Mặt trước</option>
-            <option value="back">Mặt sau</option>
-          </select>
-          <button class="btn btn-ghost btn-sm" id="btn-toggle-cam" onclick="toggleCamera()">
-            <i class="fa-solid fa-power-off" style="color:var(--success);"></i> Bật cam
-          </button>
-          <button class="btn btn-primary btn-sm" id="btn-capture-photo" onclick="capturePhoto()" disabled style="background:linear-gradient(135deg, #2563eb, #1d4ed8); font-weight:700;">
-            <i class="fa-solid fa-camera"></i> Chụp ảnh
-          </button>
-        </div>
-
-        <!-- Camera controls: CAPTURED / REVIEW MODE -->
-        <div class="cam-controls" id="cam-controls-review" style="display:none; flex-shrink:0; background:rgba(30, 41, 59, 0.7); border:1px solid rgba(59, 130, 246, 0.3); border-radius:8px; padding:6px 10px; gap:8px;">
-          <button class="btn btn-ghost btn-sm" id="btn-retake-photo" onclick="retakePhoto()" style="flex:1;">
-            <i class="fa-solid fa-rotate-left"></i> Chụp lại
-          </button>
-          <button class="btn btn-success btn-sm" id="btn-extract-data" onclick="extractCapturedPhoto()" style="flex:1.6; font-weight:700; background:linear-gradient(135deg, #10b981, #059669); box-shadow:0 0 12px rgba(16,185,129,0.35);">
-            <i class="fa-solid fa-wand-magic-sparkles"></i> Trích xuất thông tin
-          </button>
-        </div>
-
-        <!-- Scan-both info -->
-        <div style="padding:10px 12px 0; flex-shrink:0;">
-          <div style="font-size:11px; color:var(--text-dim); display:flex; align-items:center; gap:6px; margin-bottom:6px;">
-            <i class="fa-solid fa-circle-info" style="color:var(--accent);"></i>
-            Sau khi quét mặt trước, chuyển thẻ lấy mặt sau và chụp tiếp để ghép thông tin đầy đủ.
+        <!-- Camera controls container: Tiered Layout, ZERO CLIPPING -->
+        <div class="cam-controls-container" style="flex-shrink:0;">
+          <!-- Device Row: select + toggle button -->
+          <div class="cam-ctrl-row">
+            <select class="cam-select" id="camera-device-select" style="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis;" onchange="switchCameraDevice()">
+              <option value="">📷 Webcam mặc định</option>
+            </select>
+            <button class="btn btn-ghost btn-sm" id="btn-toggle-cam" onclick="toggleCamera()" style="flex-shrink:0;">
+              <i class="fa-solid fa-power-off" style="color:var(--success);"></i> Bật cam
+            </button>
           </div>
+
+          <!-- Step Banner Guide -->
+          <div id="cam-step-banner" class="cam-step-banner">
+            <i class="fa-solid fa-arrow-right-to-bracket"></i>
+            <span id="cam-step-banner-text">Bước 1: Hướng <strong>MẶT TRƯỚC</strong> thẻ vào khung ➔ Nhấn <strong>"Chụp Mặt Trước"</strong></span>
+          </div>
+
+          <!-- ── CONTROLS FOR BOTH-SIDES MODE ── -->
+          <div id="cam-actions-both" style="display:flex; flex-direction:column; gap:8px;">
+            <!-- Step 1 Button -->
+            <button class="btn btn-primary btn-md btn-full" id="btn-capture-front" onclick="captureFrontPhoto()" disabled style="background:linear-gradient(135deg, #2563eb, #1d4ed8); font-weight:700; box-shadow:0 0 16px rgba(37,99,235,0.35);">
+              <i class="fa-solid fa-camera"></i> Chụp Mặt Trước
+            </button>
+
+            <!-- Step 2 Buttons (Hidden until front captured) -->
+            <div id="cam-step2-buttons" style="display:none; gap:8px;">
+              <button class="btn btn-primary btn-md" id="btn-capture-back" onclick="captureBackPhoto()" style="flex:2; background:linear-gradient(135deg, #7c3aed, #6d28d9); font-weight:700; box-shadow:0 0 16px rgba(124,58,237,0.35);">
+                <i class="fa-solid fa-camera"></i> Chụp Mặt Sau
+              </button>
+              <button class="btn btn-ghost btn-sm" onclick="retakeFrontPhoto()" style="flex:1;" title="Chụp lại mặt trước">
+                <i class="fa-solid fa-rotate-left"></i> Chụp lại MT
+              </button>
+            </div>
+
+            <!-- Step 3 Extract Button (Hidden until both captured) -->
+            <div id="cam-step3-buttons" style="display:none; flex-direction:column; gap:8px;">
+              <button class="btn btn-success btn-lg btn-full" id="btn-extract-both" onclick="extractBothPhotos()" style="font-weight:800; background:linear-gradient(135deg, #10b981, #059669); box-shadow:0 0 20px rgba(16,185,129,0.45);">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Ghép & Trích Xuất Thông Tin 2 Mặt
+              </button>
+              <button class="btn btn-ghost btn-sm btn-full" onclick="resetDualCapture()">
+                <i class="fa-solid fa-rotate-left"></i> Chụp lại cả 2 mặt từ đầu
+              </button>
+            </div>
+          </div>
+
+          <!-- ── CONTROLS FOR SINGLE-SIDE MODE (Hidden in both-mode) ── -->
+          <div id="cam-actions-single" style="display:none; flex-direction:column; gap:8px;">
+            <div class="cam-ctrl-row">
+              <span style="font-size:11px; color:var(--text-muted); flex-shrink:0;">Mặt thẻ:</span>
+              <select class="cam-select" id="cam-side-select" style="flex:1; min-width:0;">
+                <option value="auto">Tự động phát hiện</option>
+                <option value="front">Mặt trước</option>
+                <option value="back">Mặt sau</option>
+              </select>
+            </div>
+            <!-- Live mode capture button -->
+            <button class="btn btn-primary btn-md btn-full" id="btn-capture-photo" onclick="capturePhoto()" disabled style="background:linear-gradient(135deg, #2563eb, #1d4ed8); font-weight:700;">
+              <i class="fa-solid fa-camera"></i> Chụp ảnh
+            </button>
+            <!-- Review mode buttons -->
+            <div id="cam-controls-review" style="display:none; gap:8px;">
+              <button class="btn btn-ghost btn-sm" id="btn-retake-photo" onclick="retakePhoto()" style="flex:1;">
+                <i class="fa-solid fa-rotate-left"></i> Chụp lại
+              </button>
+              <button class="btn btn-success btn-sm" id="btn-extract-data" onclick="extractCapturedPhoto()" style="flex:1.6; font-weight:700; background:linear-gradient(135deg, #10b981, #059669); box-shadow:0 0 12px rgba(16,185,129,0.35);">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Trích xuất thông tin
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- DUAL THUMBNAIL PREVIEW SLOTS (Visible in 2-sided mode) -->
+        <div class="dual-thumbs-grid" id="dual-thumbs-grid">
+          <!-- Front card slot -->
+          <div class="dual-thumb-box active-slot" id="dual-thumb-front-box">
+            <div id="front-empty-state" style="text-align:center; color:var(--text-dim); padding:6px;">
+              <i class="fa-solid fa-address-card" style="font-size:24px; margin-bottom:4px; opacity:0.4; display:block;"></i>
+              <span style="font-size:10.5px; font-weight:600;">Mặt trước (Chưa chụp)</span>
+            </div>
+            <img id="dual-thumb-front-img" class="dual-thumb-img" style="display:none;" alt="Mặt trước">
+            <div class="dual-thumb-overlay" id="dual-thumb-front-overlay" style="display:none;">
+              <span class="dual-thumb-tag text-success"><i class="fa-solid fa-circle-check"></i> MT Đã Chụp</span>
+              <button class="retake-mini-btn" onclick="retakeFrontPhoto()"><i class="fa-solid fa-rotate-left"></i> Đổi</button>
+            </div>
+          </div>
+
+          <!-- Back card slot -->
+          <div class="dual-thumb-box" id="dual-thumb-back-box">
+            <div id="back-empty-state" style="text-align:center; color:var(--text-dim); padding:6px;">
+              <i class="fa-solid fa-id-badge" style="font-size:24px; margin-bottom:4px; opacity:0.4; display:block;"></i>
+              <span style="font-size:10.5px; font-weight:600;">Mặt sau (Chưa chụp)</span>
+            </div>
+            <img id="dual-thumb-back-img" class="dual-thumb-img" style="display:none;" alt="Mặt sau">
+            <div class="dual-thumb-overlay" id="dual-thumb-back-overlay" style="display:none;">
+              <span class="dual-thumb-tag" style="color:#d8b4fe;"><i class="fa-solid fa-circle-check"></i> MS Đã Chụp</span>
+              <button class="retake-mini-btn" onclick="retakeBackPhoto()"><i class="fa-solid fa-rotate-left"></i> Đổi</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Scan-both info & utility actions -->
+        <div style="padding:10px 12px 14px; flex-shrink:0; background:var(--bg-card); border-top:1px solid var(--border);">
           <div style="display:flex; gap:8px;">
             <button class="btn btn-amber btn-sm" onclick="resetScan()" style="flex:1;">
-              <i class="fa-solid fa-rotate-left"></i> Quét lại
+              <i class="fa-solid fa-rotate-left"></i> Xóa kết quả
             </button>
             <button class="btn btn-ghost btn-sm" onclick="exportCurrentJSON()" style="flex:1;">
               <i class="fa-solid fa-download"></i> Xuất JSON
@@ -1443,27 +1674,117 @@
     document.getElementById('stab-' + tab).classList.add('active');
   }
 
-  // ─── CAMERA ───
+  // ─── CAMERA & WEBCAM 2-SIDED SCANNING ───
+  let webcamMode = 'both'; // 'both' or 'single'
+  let webcamFrontBase64 = null;
+  let webcamBackBase64 = null;
+  let webcamStep = 1; // 1: Chờ chụp MT, 2: Chờ chụp MS, 3: Đã chụp cả 2 mặt
+  let capturedImageBase64 = null; // Chế độ chụp 1 mặt
+
+  function switchWebcamMode(mode) {
+    webcamMode = mode;
+    const btnBoth = document.getElementById('btn-mode-both');
+    const btnSingle = document.getElementById('btn-mode-single');
+    const actBoth = document.getElementById('cam-actions-both');
+    const actSingle = document.getElementById('cam-actions-single');
+    const dualGrid = document.getElementById('dual-thumbs-grid');
+    const banner = document.getElementById('cam-step-banner');
+
+    if (mode === 'both') {
+      if (btnBoth) btnBoth.classList.add('active');
+      if (btnSingle) btnSingle.classList.remove('active');
+      if (actBoth) actBoth.style.display = 'flex';
+      if (actSingle) actSingle.style.display = 'none';
+      if (dualGrid) dualGrid.style.display = 'grid';
+      if (banner) banner.style.display = 'flex';
+      retakePhoto();
+      updateDualStepUI();
+    } else {
+      if (btnSingle) btnSingle.classList.add('active');
+      if (btnBoth) btnBoth.classList.remove('active');
+      if (actBoth) actBoth.style.display = 'none';
+      if (actSingle) actSingle.style.display = 'flex';
+      if (dualGrid) dualGrid.style.display = 'none';
+      if (banner) banner.style.display = 'none';
+      retakePhoto();
+    }
+  }
+
+  function updateDualStepUI() {
+    const banner = document.getElementById('cam-step-banner');
+    const bannerText = document.getElementById('cam-step-banner-text');
+    const btnCaptureFront = document.getElementById('btn-capture-front');
+    const step2Buttons = document.getElementById('cam-step2-buttons');
+    const step3Buttons = document.getElementById('cam-step3-buttons');
+    const slotFront = document.getElementById('dual-thumb-front-box');
+    const slotBack = document.getElementById('dual-thumb-back-box');
+
+    if (!banner || !bannerText) return;
+
+    if (webcamFrontBase64) {
+      if (slotFront) slotFront.classList.add('has-image');
+    } else {
+      if (slotFront) slotFront.classList.remove('has-image');
+    }
+    if (webcamBackBase64) {
+      if (slotBack) slotBack.classList.add('has-image');
+    } else {
+      if (slotBack) slotBack.classList.remove('has-image');
+    }
+
+    if (webcamStep === 1) {
+      banner.className = 'cam-step-banner';
+      bannerText.innerHTML = 'Bước 1: Hướng <strong>MẶT TRƯỚC</strong> thẻ vào khung ➔ Nhấn <strong>"Chụp Mặt Trước"</strong>';
+      if (btnCaptureFront) {
+        btnCaptureFront.style.display = 'inline-flex';
+        btnCaptureFront.disabled = !cameraStream;
+      }
+      if (step2Buttons) step2Buttons.style.display = 'none';
+      if (step3Buttons) step3Buttons.style.display = 'none';
+      if (slotFront) slotFront.classList.add('active-slot');
+      if (slotBack) slotBack.classList.remove('active-slot');
+    } else if (webcamStep === 2) {
+      banner.className = 'cam-step-banner step-back';
+      bannerText.innerHTML = 'Bước 2: Lật <strong>MẶT SAU</strong> thẻ vào khung ➔ Nhấn <strong>"Chụp Mặt Sau"</strong>';
+      if (btnCaptureFront) btnCaptureFront.style.display = 'none';
+      if (step2Buttons) step2Buttons.style.display = 'flex';
+      if (step3Buttons) step3Buttons.style.display = 'none';
+      if (slotFront) slotFront.classList.remove('active-slot');
+      if (slotBack) slotBack.classList.add('active-slot');
+    } else if (webcamStep === 3) {
+      banner.className = 'cam-step-banner step-done';
+      bannerText.innerHTML = '<i class="fa-solid fa-circle-check"></i> Đã chụp đủ 2 mặt! Bấm <strong>"Ghép & Trích Xuất 2 Mặt"</strong> bên dưới.';
+      if (btnCaptureFront) btnCaptureFront.style.display = 'none';
+      if (step2Buttons) step2Buttons.style.display = 'none';
+      if (step3Buttons) step3Buttons.style.display = 'flex';
+      if (slotFront) slotFront.classList.remove('active-slot');
+      if (slotBack) slotBack.classList.remove('active-slot');
+    }
+  }
+
   async function enumerateCameras() {
     try {
       const devs = await navigator.mediaDevices.enumerateDevices();
       const cams = devs.filter(d => d.kind === 'videoinput');
       const sel = document.getElementById('camera-device-select');
+      if (!sel) return;
+      const curVal = sel.value;
       sel.innerHTML = cams.map((c, i) =>
         `<option value="${c.deviceId}">${c.label || '📷 Camera ' + (i+1)}</option>`
       ).join('');
+      if (curVal && cams.some(c => c.deviceId === curVal)) {
+        sel.value = curVal;
+      }
     } catch(e) {}
   }
-
-  let capturedImageBase64 = null;
 
   async function toggleCamera() {
     const video = document.getElementById('webcam-video');
     const placeholder = document.getElementById('cam-placeholder');
     const guideEl = document.getElementById('cam-guide-el');
-    const tipEl = document.getElementById('cam-tip');
     const btnToggle = document.getElementById('btn-toggle-cam');
     const btnCapturePhoto = document.getElementById('btn-capture-photo');
+    const btnCaptureFront = document.getElementById('btn-capture-front');
 
     if (cameraStream) {
       cameraStream.getTracks().forEach(t => t.stop());
@@ -1472,9 +1793,9 @@
       retakePhoto();
       placeholder.style.display = 'flex';
       guideEl.style.display = 'none';
-      tipEl.style.display = 'none';
       btnToggle.innerHTML = '<i class="fa-solid fa-power-off" style="color:var(--success);"></i> Bật cam';
-      btnCapturePhoto.disabled = true;
+      if (btnCapturePhoto) btnCapturePhoto.disabled = true;
+      if (btnCaptureFront) btnCaptureFront.disabled = true;
       return;
     }
 
@@ -1490,20 +1811,24 @@
       retakePhoto();
       placeholder.style.display = 'none';
       guideEl.style.display = 'block';
-      tipEl.style.display = 'block';
       btnToggle.innerHTML = '<i class="fa-solid fa-stop" style="color:var(--danger);"></i> Tắt cam';
-      btnCapturePhoto.disabled = false;
+      if (btnCapturePhoto) btnCapturePhoto.disabled = false;
+      if (btnCaptureFront) btnCaptureFront.disabled = false;
       await enumerateCameras();
     } catch(err) {
       showToast('error', 'Không thể mở Camera: ' + err.message);
     }
   }
 
-  function capturePhoto() {
-    if (!cameraStream) {
-      showToast('warning', 'Vui lòng bật webcam trước khi chụp!');
-      return;
+  async function switchCameraDevice() {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(t => t.stop());
+      cameraStream = null;
+      await toggleCamera();
     }
+  }
+
+  function snapFrameBase64() {
     const video = document.getElementById('webcam-video');
     const canvas = document.getElementById('webcam-canvas');
     canvas.width  = video.videoWidth  || 1280;
@@ -1511,21 +1836,131 @@
     const ctx = canvas.getContext('2d');
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     flashScreen();
+    return canvas.toDataURL('image/jpeg', 0.95);
+  }
 
-    capturedImageBase64 = canvas.toDataURL('image/jpeg', 0.95);
+  function captureFrontPhoto() {
+    if (!cameraStream) {
+      showToast('warning', 'Vui lòng bật webcam trước khi chụp!');
+      return;
+    }
+    webcamFrontBase64 = snapFrameBase64();
+    document.getElementById('dual-thumb-front-img').src = webcamFrontBase64;
+    document.getElementById('dual-thumb-front-img').style.display = 'block';
+    document.getElementById('front-empty-state').style.display = 'none';
+    document.getElementById('dual-thumb-front-overlay').style.display = 'flex';
+
+    if (webcamBackBase64) {
+      webcamStep = 3;
+    } else {
+      webcamStep = 2;
+    }
+    updateDualStepUI();
+    showToast('info', '📸 Đã chụp Mặt Trước! Bây giờ hãy lật sang Mặt Sau.');
+  }
+
+  function captureBackPhoto() {
+    if (!cameraStream) {
+      showToast('warning', 'Vui lòng bật webcam trước khi chụp!');
+      return;
+    }
+    webcamBackBase64 = snapFrameBase64();
+    document.getElementById('dual-thumb-back-img').src = webcamBackBase64;
+    document.getElementById('dual-thumb-back-img').style.display = 'block';
+    document.getElementById('back-empty-state').style.display = 'none';
+    document.getElementById('dual-thumb-back-overlay').style.display = 'flex';
+
+    webcamStep = 3;
+    updateDualStepUI();
+    showToast('success', '📸 Đã chụp đủ 2 mặt! Bấm "Ghép & Trích Xuất Thông Tin 2 Mặt".');
+  }
+
+  function retakeFrontPhoto() {
+    webcamFrontBase64 = null;
+    document.getElementById('dual-thumb-front-img').src = '';
+    document.getElementById('dual-thumb-front-img').style.display = 'none';
+    document.getElementById('front-empty-state').style.display = 'block';
+    document.getElementById('dual-thumb-front-overlay').style.display = 'none';
+    webcamStep = 1;
+    updateDualStepUI();
+  }
+
+  function retakeBackPhoto() {
+    webcamBackBase64 = null;
+    document.getElementById('dual-thumb-back-img').src = '';
+    document.getElementById('dual-thumb-back-img').style.display = 'none';
+    document.getElementById('back-empty-state').style.display = 'block';
+    document.getElementById('dual-thumb-back-overlay').style.display = 'none';
+    webcamStep = 2;
+    updateDualStepUI();
+  }
+
+  function resetDualCapture() {
+    webcamFrontBase64 = null;
+    webcamBackBase64 = null;
+    const fImg = document.getElementById('dual-thumb-front-img');
+    const bImg = document.getElementById('dual-thumb-back-img');
+    if (fImg) { fImg.src = ''; fImg.style.display = 'none'; }
+    if (bImg) { bImg.src = ''; bImg.style.display = 'none'; }
+    const fEmp = document.getElementById('front-empty-state');
+    const bEmp = document.getElementById('back-empty-state');
+    if (fEmp) fEmp.style.display = 'block';
+    if (bEmp) bEmp.style.display = 'block';
+    const fOvl = document.getElementById('dual-thumb-front-overlay');
+    const bOvl = document.getElementById('dual-thumb-back-overlay');
+    if (fOvl) fOvl.style.display = 'none';
+    if (bOvl) bOvl.style.display = 'none';
+    webcamStep = 1;
+    updateDualStepUI();
+  }
+
+  async function extractBothPhotos() {
+    if (!webcamFrontBase64 || !webcamBackBase64) {
+      showToast('warning', 'Vui lòng chụp đủ cả 2 mặt trước khi trích xuất!');
+      return;
+    }
+
+    setLeftLoading(true, 'Đang trích xuất OCR & ghép dữ liệu 2 mặt CCCD...');
+    try {
+      const res = await fetch(`${API}/api/v1/ocr/scan-webcam-both`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          front_base64: webcamFrontBase64,
+          back_base64: webcamBackBase64
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Lỗi ghép 2 mặt webcam');
+      renderResult(data);
+      showToast('success', `Ghép 2 mặt thành công! Độ tin cậy: ${Math.round((data.overall_confidence || 0) * 100)}%`);
+    } catch(err) {
+      showToast('error', 'Lỗi: ' + err.message);
+    } finally {
+      setLeftLoading(false);
+    }
+  }
+
+  // ─── SINGLE MODE CAPTURE & REVIEW ───
+  function capturePhoto() {
+    if (!cameraStream) {
+      showToast('warning', 'Vui lòng bật webcam trước khi chụp!');
+      return;
+    }
+    capturedImageBase64 = snapFrameBase64();
 
     // Freeze snapshot on screen
     const snapImg = document.getElementById('webcam-snapshot-img');
     snapImg.src = capturedImageBase64;
     snapImg.style.display = 'block';
-    video.style.display = 'none';
+    document.getElementById('webcam-video').style.display = 'none';
 
     // Show badge and hide guide laser
     document.getElementById('snapshot-badge').style.display = 'flex';
     document.getElementById('cam-guide-el').style.display = 'none';
 
     // Switch control buttons to review mode
-    document.getElementById('cam-controls-live').style.display = 'none';
+    document.getElementById('btn-capture-photo').style.display = 'none';
     document.getElementById('cam-controls-review').style.display = 'flex';
 
     showToast('info', '📸 Đã chụp ảnh thành công! Bấm "Trích xuất thông tin" để bắt đầu nhận diện.');
@@ -1545,9 +1980,9 @@
       guideEl.style.display = 'block';
     }
 
-    const ctrlLive = document.getElementById('cam-controls-live');
+    const btnCap = document.getElementById('btn-capture-photo');
     const ctrlReview = document.getElementById('cam-controls-review');
-    if (ctrlLive) ctrlLive.style.display = 'flex';
+    if (btnCap) btnCap.style.display = 'inline-flex';
     if (ctrlReview) ctrlReview.style.display = 'none';
   }
 
@@ -1557,7 +1992,7 @@
       return;
     }
 
-    const sideHint = document.getElementById('cam-side-select').value;
+    const sideHint = document.getElementById('cam-side-select') ? document.getElementById('cam-side-select').value : 'auto';
     setLeftLoading(true, 'Đang trích xuất thông tin từ ảnh chụp...');
 
     try {
@@ -1579,8 +2014,14 @@
 
   // Backward compatible alias
   async function captureAndScan() {
-    capturePhoto();
-    await extractCapturedPhoto();
+    if (webcamMode === 'both') {
+      if (webcamStep === 1) captureFrontPhoto();
+      else if (webcamStep === 2) captureBackPhoto();
+      else if (webcamStep === 3) await extractBothPhotos();
+    } else {
+      capturePhoto();
+      await extractCapturedPhoto();
+    }
   }
 
   // ─── FILE UPLOAD ───
@@ -1873,6 +2314,7 @@
     currentRecordId = null;
     currentResultData = null;
     retakePhoto();
+    resetDualCapture();
     document.getElementById('empty-state').style.display = 'flex';
     document.getElementById('result-form').style.display = 'none';
     document.getElementById('confirm-bar').style.display = 'none';
@@ -2206,6 +2648,8 @@
   // ─── INIT ───
   document.addEventListener('DOMContentLoaded', () => {
     buildSamplePicker();
+    enumerateCameras();
+    updateDualStepUI();
     loadHistory();
     // Initial stats load
     loadStats();

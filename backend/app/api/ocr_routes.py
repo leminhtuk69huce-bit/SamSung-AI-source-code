@@ -5,7 +5,7 @@ from typing import Optional
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException, BackgroundTasks
 from starlette.concurrency import run_in_threadpool
 from ..config import STORAGE_DIR, SAMPLE_DATA_DIR, TARGET_IMAGE_WIDTH
-from ..schemas import OCRScanResponse, WebcamScanRequest, BoundingBox, FieldDetail
+from ..schemas import OCRScanResponse, WebcamScanRequest, WebcamBothScanRequest, BoundingBox, FieldDetail
 from ..services.preprocessor import (
     read_image_from_bytes,
     read_image_from_base64,
@@ -229,6 +229,84 @@ async def scan_webcam(payload: WebcamScanRequest):
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Lỗi xử lý OCR webcam: {str(e)}")
+
+@router.post("/scan-webcam-both", response_model=OCRScanResponse, summary="Quét cả 2 mặt trực tiếp từ Webcam (Base64)")
+async def scan_webcam_both(payload: WebcamBothScanRequest):
+    """
+    Nhận diện kí tự và ghép toàn diện dữ liệu từ cả 2 mặt thẻ CCCD/CMND chụp từ Webcam.
+    """
+    try:
+        t0 = time.time()
+        import base64 as b64
+
+        front_clean = payload.front_base64.split(",", 1)[-1] if "," in payload.front_base64 else payload.front_base64
+        back_clean = payload.back_base64.split(",", 1)[-1] if "," in payload.back_base64 else payload.back_base64
+
+        front_bytes = b64.b64decode(front_clean)
+        back_bytes = b64.b64decode(back_clean)
+
+        f_id, f_extracted, f_boxes, _, f_url = await run_in_threadpool(
+            process_single_image, front_bytes, "webcam_front", side_hint="FRONT"
+        )
+        b_id, b_extracted, b_boxes, _, b_url = await run_in_threadpool(
+            process_single_image, back_bytes, "webcam_back", side_hint="BACK"
+        )
+
+        merged = merge_front_and_back(f_extracted, b_extracted)
+        total_time = round(time.time() - t0, 2)
+
+        record_id = str(uuid.uuid4())
+        fields = merged["fields"]
+
+        db_payload = {
+            "id": record_id,
+            "document_type": merged["document_type"],
+            "side": "BOTH",
+            "id_number": fields["id_number"]["value"],
+            "full_name": fields["full_name"]["value"],
+            "date_of_birth": fields["date_of_birth"]["value"],
+            "gender": fields["gender"]["value"],
+            "nationality": fields["nationality"]["value"],
+            "place_of_origin": fields["place_of_origin"]["value"],
+            "place_of_residence": fields["place_of_residence"]["value"],
+            "date_of_expiry": fields["date_of_expiry"]["value"],
+            "date_of_issue": fields["date_of_issue"]["value"],
+            "issuing_authority": fields["issuing_authority"]["value"],
+            "identifying_features": fields["identifying_features"]["value"],
+            "mrz_code": fields["mrz_code"]["value"],
+            "confidence_score": merged["overall_confidence"],
+            "processing_time_sec": total_time,
+            "image_front_path": f_url,
+            "image_back_path": b_url,
+            "raw_detection_json": {"front_boxes": f_boxes, "back_boxes": b_boxes},
+        }
+        save_record(db_payload)
+
+        field_details = {
+            k: FieldDetail(value=v["value"], confidence=round(v["confidence"], 2))
+            for k, v in fields.items()
+        }
+
+        return OCRScanResponse(
+            id=record_id,
+            created_at=time.strftime("%Y-%m-%dT%H:%M:%S"),
+            document_type=merged["document_type"],
+            side="BOTH",
+            overall_confidence=merged["overall_confidence"],
+            processing_time_sec=total_time,
+            fields=field_details,
+            warnings=merged["warnings"],
+            image_url=f_url,
+            image_back_url=b_url,
+            detected_boxes=[
+                BoundingBox(box=b["box"], text=b["text"], confidence=round(b["confidence"], 2))
+                for b in f_boxes
+            ]
+        )
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Lỗi ghép 2 mặt webcam: {str(e)}")
 
 @router.post("/scan-both", response_model=OCRScanResponse, summary="Quét cả 2 mặt trước và sau (Ghép thông tin)")
 async def scan_both_sides(

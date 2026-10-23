@@ -47,6 +47,10 @@ class WebcamScanRequest(BaseModel):
     side_hint: Optional[str] = Field(default="auto", description="front | back | auto")
     document_type_hint: Optional[str] = Field(default="auto", description="cccd | cmnd | auto")
 
+class WebcamBothScanRequest(BaseModel):
+    front_base64: str = Field(..., description="Base64 encoded front card image (with or without data URL prefix)")
+    back_base64: str = Field(..., description="Base64 encoded back card image (with or without data URL prefix)")
+
 class RecordUpdatePayload(BaseModel):
     id_number: Optional[str] = None
     full_name: Optional[str] = None
