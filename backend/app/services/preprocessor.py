@@ -40,6 +40,68 @@ def read_image_from_base64(base64_str: str) -> np.ndarray:
     except Exception as e:
         raise ValueError(f"Lỗi giải mã base64: {str(e)}")
 
+def auto_orient_card(image: np.ndarray) -> Tuple[np.ndarray, int]:
+    """
+    Tự động nhận diện góc xoay và xoay ảnh thẻ CCCD/CMND về đúng chiều chuẩn (ngang, mặt xuôi).
+    - Căn theo vị trí mã QR (góc trên bên phải thẻ CCCD mặt trước).
+    - Nếu không có QR: kiểm tra tỉ lệ khung hình (dọc -> ngang).
+    Trả về: (ảnh_đã_xoay, góc_xoay_đã_thực_hiện)
+    """
+    if image is None:
+        return image, 0
+
+    try:
+        detector = cv2.QRCodeDetector()
+        h, w = image.shape[:2]
+
+        # Kiểm tra 4 góc xoay: 0 độ, 90 độ, 180 độ, 270 độ
+        rotations = [
+            (0, None),
+            (90, cv2.ROTATE_90_CLOCKWISE),
+            (180, cv2.ROTATE_180),
+            (270, cv2.ROTATE_90_COUNTERCLOCKWISE)
+        ]
+
+        for angle, rot_code in rotations:
+            test_img = image if rot_code is None else cv2.rotate(image, rot_code)
+            th, tw = test_img.shape[:2]
+            
+            # Thử phát hiện mã QR
+            res, pts = detector.detect(test_img)
+            if res and pts is not None and len(pts) > 0:
+                p = pts[0] if pts.ndim == 3 else pts
+                cx = float(np.mean(p[:, 0]))
+                cy = float(np.mean(p[:, 1]))
+
+                # Nếu trong test_img, mã QR đã nằm ở góc trên bên phải (cx > 0.45*tw và cy < 0.55*th):
+                if cx > tw * 0.45 and cy < th * 0.55:
+                    return test_img, angle
+
+                # Nếu chưa ở góc trên phải, xoay tiếp dựa theo góc phần tư của QR:
+                if cx > tw * 0.5 and cy >= th * 0.5:
+                    # Nằm ở góc dưới phải -> xoay 90 độ ngược chiều kim đồng hồ
+                    corrected = cv2.rotate(test_img, cv2.ROTATE_90_COUNTERCLOCKWISE)
+                    return corrected, (angle + 270) % 360
+                elif cx <= tw * 0.5 and cy >= th * 0.5:
+                    # Nằm ở góc dưới trái -> xoay 180 độ
+                    corrected = cv2.rotate(test_img, cv2.ROTATE_180)
+                    return corrected, (angle + 180) % 360
+                elif cx <= tw * 0.5 and cy < th * 0.5:
+                    # Nằm ở góc trên trái -> xoay 90 độ thuận chiều kim đồng hồ
+                    corrected = cv2.rotate(test_img, cv2.ROTATE_90_CLOCKWISE)
+                    return corrected, (angle + 90) % 360
+
+        # Nếu không tìm thấy mã QR (ví dụ CMND 9 số, CMND 12 số hoặc mặt sau):
+        # Kiểm tra tỉ lệ: nếu ảnh đang đứng (h > w * 1.15), xoay 90 độ sang ngang
+        if h > w * 1.15:
+            corrected = cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE)
+            return corrected, 90
+
+    except Exception as e:
+        print(f"⚠️ [AUTO-ORIENT] Lưu ý nhận diện góc xoay: {e}")
+
+    return image, 0
+
 def resize_for_ocr(image: np.ndarray, target_width: int = 1280) -> Tuple[np.ndarray, float]:
     """
     Resizes image while preserving aspect ratio to optimize OCR speed and accuracy.

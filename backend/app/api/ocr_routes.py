@@ -10,6 +10,7 @@ from ..services.preprocessor import (
     read_image_from_bytes,
     read_image_from_base64,
     read_image_from_path,
+    auto_orient_card,
     resize_for_ocr,
     enhance_image,
     save_image_to_storage
@@ -24,8 +25,9 @@ def process_single_image(image_bytes: bytes, filename_prefix: str = "scan", side
     """Core helper to process an image array, run OCR and extract fields."""
     start_time = time.time()
     
-    # 1. Read & enhance image
+    # 1. Read, auto-orient & enhance image
     image = read_image_from_bytes(image_bytes)
+    image, _ = auto_orient_card(image)
     resized, scale = resize_for_ocr(image, target_width=TARGET_IMAGE_WIDTH)
     enhanced = enhance_image(resized)
 
@@ -50,6 +52,7 @@ def process_webcam_image(image_base64: str, side_hint: str = "auto") -> tuple:
     """Core helper to decode base64 webcam frame, run OCR and extract fields."""
     start_time = time.time()
     image = read_image_from_base64(image_base64)
+    image, _ = auto_orient_card(image)
     resized, scale = resize_for_ocr(image, target_width=TARGET_IMAGE_WIDTH)
     enhanced = enhance_image(resized)
 
@@ -70,6 +73,7 @@ def process_sample_image(front_img_path: Path, target_folder_name: str) -> tuple
     """Core helper to load a sample card image from disk, run OCR and extract fields."""
     t0 = time.time()
     image = read_image_from_path(front_img_path)
+    image, _ = auto_orient_card(image)
     resized, scale = resize_for_ocr(image, target_width=TARGET_IMAGE_WIDTH)
     enhanced = enhance_image(resized)
 
