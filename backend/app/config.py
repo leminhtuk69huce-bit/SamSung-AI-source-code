@@ -27,15 +27,10 @@ os.environ["TEMP"] = str(TEMP_DIR)
 os.environ["TMP"] = str(TEMP_DIR)
 
 
-# Sample data directory
-# When EXE: expected to be next to the EXE (copied by build script)
-# When source: one level above backend/
 if getattr(sys, 'frozen', False):
-    SAMPLE_DATA_DIR = BASE_DIR / "Dữ liệu mẫu"
-    WORKSPACE_DIR   = BASE_DIR
+    WORKSPACE_DIR = BASE_DIR
 else:
-    WORKSPACE_DIR   = BASE_DIR.parent
-    SAMPLE_DATA_DIR = WORKSPACE_DIR / "Dữ liệu mẫu"
+    WORKSPACE_DIR = BASE_DIR.parent
 
 # Database path
 DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{BASE_DIR}/ocr_database.db")

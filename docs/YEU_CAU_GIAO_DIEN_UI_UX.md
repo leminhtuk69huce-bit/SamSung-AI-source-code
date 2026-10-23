@@ -74,9 +74,6 @@ Hệ thống bao gồm thanh điều hướng (Sidebar bên trái hoặc Top Nav
    - Cho phép chọn chế độ:
      - **Quét 1 mặt**: Gọi `POST /api/v1/ocr/scan` (multipart/form-data).
      - **Quét cả 2 mặt (Ghép hồ sơ)**: Có 2 ô kéo thả "Mặt trước" và "Mặt sau" -> Gọi `POST /api/v1/ocr/scan-both`.
-2. **Chế độ chạy thử Dữ liệu mẫu (Demo Sample):**
-   - Dropdown hoặc danh sách 48 bộ mẫu CCCD thực tế từ folder `Dữ liệu mẫu`.
-   - Nút **"Chạy thử mẫu này"** -> Gọi `POST /api/v1/ocr/demo-sample` với `sample_index=0...47`. Rất tiện khi đi chấm bài báo cáo không cần có thẻ thật trước webcam.
 
 ---
 
@@ -205,12 +202,7 @@ Base URL: `http://localhost:8000`
   - `back_file`: `<Binary Image>`
 - **Response:** Trả về đầy đủ cả thông tin mặt trước lẫn ngày cấp, nơi cấp, đặc điểm nhận dạng ở mặt sau.
 
-### 4. Quét Dữ liệu mẫu (Sample Dataset)
-- **Endpoint:** `POST /api/v1/ocr/demo-sample`
-- **Content-Type:** `application/x-www-form-urlencoded`
-- **Form Data:** `sample_index=0` (từ 0 đến 47).
-
-### 5. Lấy danh sách lịch sử
+### 4. Lấy danh sách lịch sử
 - **Endpoint:** `GET /api/v1/ocr/history?search=&document_type=&limit=20&offset=0`
 - **Response:**
   ```json

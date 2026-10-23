@@ -3,7 +3,7 @@ from typing import Optional
 from ..database import get_statistics, list_records
 from ..schemas import StatsResponse, HealthResponse
 from ..services.export_service import export_records_to_csv, export_records_to_excel
-from ..config import API_TITLE, API_VERSION, OCR_GPU, SAMPLE_DATA_DIR
+from ..config import API_TITLE, API_VERSION, OCR_GPU
 
 router = APIRouter(prefix="/api/v1", tags=["Statistics & System"])
 
@@ -51,15 +51,11 @@ async def health_check():
     """
     Endpoint kiểm tra liveness và readiness của backend.
     """
-    sample_count = 0
-    if SAMPLE_DATA_DIR.exists():
-        sample_count = len([d for d in SAMPLE_DATA_DIR.iterdir() if d.is_dir()])
-
     return HealthResponse(
         status="healthy",
         app_name=API_TITLE,
         version=API_VERSION,
         ocr_engine="EasyOCR (CRAFT + BiLSTM + CTC) with Vietnamese Post-Processor",
-        gpu_enabled=OCR_GPU,
-        total_sample_cases_available=sample_count
+        gpu_enabled=OCR_GPU
     )
+

@@ -33,3 +33,7 @@ ENV/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Private training dataset (DO NOT COMMIT OR PUSH TO GITHUB)
+Dữ liệu mẫu/
+Dữ liệu mẫu

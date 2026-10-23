@@ -35,7 +35,7 @@ def test_health():
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "healthy"
-    print(f" -> Health: PASSED (Số mẫu có sẵn: {data['total_sample_cases_available']})")
+    print(f" -> Health: PASSED (Status: {data['status']}, OCR: {data['ocr_engine']})")
 
 def test_stats_initial():
     print("[TEST 3] Kiểm tra endpoint '/api/v1/ocr/stats'...")
@@ -45,21 +45,22 @@ def test_stats_initial():
     assert "total_scans" in data
     print(f" -> Stats: PASSED (Tổng lượt scan hiện tại: {data['total_scans']})")
 
-def test_demo_sample_ocr():
-    print("[TEST 4] Kiểm tra OCR trích xuất từ dữ liệu mẫu '/api/v1/ocr/demo-sample'...")
-    response = client.post("/api/v1/ocr/demo-sample", data={"sample_index": 0})
+def test_scan_upload_ocr():
+    print("[TEST 4] Kiểm tra OCR trích xuất từ file tải lên '/api/v1/ocr/scan'...")
+    import numpy as np
+    import cv2
+    dummy_img = np.zeros((300, 500, 3), dtype=np.uint8)
+    cv2.putText(dummy_img, "001205051692", (50, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+    cv2.putText(dummy_img, "NGUYEN VAN A", (50, 150), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+    _, buffer = cv2.imencode(".jpg", dummy_img)
+    files = {"file": ("test_cccd.jpg", buffer.tobytes(), "image/jpeg")}
+    response = client.post("/api/v1/ocr/scan", files=files, data={"side_hint": "front"})
     assert response.status_code == 200
     data = response.json()
     assert "id" in data
     assert "fields" in data
     record_id = data["id"]
-    fields = data["fields"]
-    print(f" -> Demo Sample OCR: PASSED (ID: {record_id})")
-    print(f"    - Loại thẻ: {data.get('document_type')}")
-    print(f"    - Số CCCD: {fields.get('id_number', {}).get('value')}")
-    print(f"    - Họ tên: {fields.get('full_name', {}).get('value')}")
-    print(f"    - Ngày sinh: {fields.get('date_of_birth', {}).get('value')}")
-    print(f"    - Độ tin cậy: {data.get('overall_confidence')}")
+    print(f" -> Upload Scan OCR: PASSED (ID: {record_id})")
     return record_id
 
 def test_history_list(record_id: str):
@@ -143,7 +144,7 @@ if __name__ == "__main__":
     test_root()
     test_health()
     test_stats_initial()
-    rec_id = test_demo_sample_ocr()
+    rec_id = test_scan_upload_ocr()
     test_history_list(rec_id)
     test_history_detail(rec_id)
     test_history_update(rec_id)

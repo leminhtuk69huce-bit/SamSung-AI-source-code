@@ -2,9 +2,9 @@ import time
 import uuid
 from pathlib import Path
 from typing import Optional
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException, BackgroundTasks
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from starlette.concurrency import run_in_threadpool
-from ..config import STORAGE_DIR, SAMPLE_DATA_DIR, TARGET_IMAGE_WIDTH
+from ..config import STORAGE_DIR, TARGET_IMAGE_WIDTH
 from ..schemas import OCRScanResponse, WebcamScanRequest, WebcamBothScanRequest, BoundingBox, FieldDetail
 from ..services.preprocessor import (
     read_image_from_bytes,
@@ -15,6 +15,7 @@ from ..services.preprocessor import (
     enhance_image,
     save_image_to_storage
 )
+from ..services.card_detector import detect_and_crop_card
 from ..services.ocr_engine import get_ocr_engine
 from ..services.extractor import extract_fields, merge_front_and_back
 from ..database import save_record
@@ -24,22 +25,31 @@ router = APIRouter(prefix="/api/v1/ocr", tags=["OCR Processing"])
 def process_single_image(image_bytes: bytes, filename_prefix: str = "scan", side_hint: str = "auto") -> tuple:
     """Core helper to process an image array, run OCR and extract fields."""
     start_time = time.time()
-    
-    # 1. Read, auto-orient & enhance image
+
+    # 1. Read raw image
     image = read_image_from_bytes(image_bytes)
+
+    # 2. [CARD DETECT] Phát hiện và crop vùng thẻ CCCD trước khi OCR
+    image, card_found = detect_and_crop_card(image)
+
+    # 3. Auto-orient (theo mã QR), resize & enhance
     image, _ = auto_orient_card(image)
     resized, scale = resize_for_ocr(image, target_width=TARGET_IMAGE_WIDTH)
     enhanced = enhance_image(resized)
 
-    # 2. Run OCR
+    # 4. Run OCR
     engine = get_ocr_engine()
     raw_boxes = engine.run_ocr(enhanced)
 
-    # 3. Extract Fields
+    # 5. Extract Fields
     extracted = extract_fields(raw_boxes, side_hint=side_hint)
+    if not card_found:
+        extracted.setdefault("warnings", []).append(
+            "Khong tu dong xac dinh duoc vung the. Hay dat the CCCD ro rang, du anh sang va tranh vat can."
+        )
     elapsed = round(time.time() - start_time, 2)
 
-    # 4. Save image to storage safely
+    # 6. Save image to storage safely
     record_id = str(uuid.uuid4())
     img_name = f"{filename_prefix}_{record_id}.jpg"
     img_path = STORAGE_DIR / img_name
@@ -52,6 +62,10 @@ def process_webcam_image(image_base64: str, side_hint: str = "auto") -> tuple:
     """Core helper to decode base64 webcam frame, run OCR and extract fields."""
     start_time = time.time()
     image = read_image_from_base64(image_base64)
+
+    # [CARD DETECT] Phát hiện và crop vùng thẻ CCCD trước khi OCR
+    image, card_found = detect_and_crop_card(image)
+
     image, _ = auto_orient_card(image)
     resized, scale = resize_for_ocr(image, target_width=TARGET_IMAGE_WIDTH)
     enhanced = enhance_image(resized)
@@ -59,32 +73,16 @@ def process_webcam_image(image_base64: str, side_hint: str = "auto") -> tuple:
     engine = get_ocr_engine()
     raw_boxes = engine.run_ocr(enhanced)
     extracted = extract_fields(raw_boxes, side_hint=side_hint)
+    if not card_found:
+        extracted.setdefault("warnings", []).append(
+            "Khong tu dong xac dinh duoc vung the. Hay dat the CCCD ro rang, du anh sang."
+        )
     elapsed = round(time.time() - start_time, 2)
 
     record_id = str(uuid.uuid4())
     img_name = f"webcam_{record_id}.jpg"
     img_path = STORAGE_DIR / img_name
     saved_path = save_image_to_storage(image, img_path)
-    img_url = f"/storage/{img_name}" if saved_path else None
-
-    return record_id, extracted, raw_boxes, elapsed, img_url
-
-def process_sample_image(front_img_path: Path, target_folder_name: str) -> tuple:
-    """Core helper to load a sample card image from disk, run OCR and extract fields."""
-    t0 = time.time()
-    image = read_image_from_path(front_img_path)
-    image, _ = auto_orient_card(image)
-    resized, scale = resize_for_ocr(image, target_width=TARGET_IMAGE_WIDTH)
-    enhanced = enhance_image(resized)
-
-    engine = get_ocr_engine()
-    raw_boxes = engine.run_ocr(enhanced)
-    extracted = extract_fields(raw_boxes, side_hint="auto")
-    elapsed = round(time.time() - t0, 2)
-
-    record_id = str(uuid.uuid4())
-    img_name = f"sample_{target_folder_name}_{record_id}.jpg"
-    saved_path = save_image_to_storage(image, STORAGE_DIR / img_name)
     img_url = f"/storage/{img_name}" if saved_path else None
 
     return record_id, extracted, raw_boxes, elapsed, img_url
@@ -385,93 +383,3 @@ async def scan_both_sides(
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Lỗi ghép 2 mặt thẻ: {str(e)}")
-
-@router.post("/demo-sample", response_model=OCRScanResponse, summary="Chạy thử với bộ dữ liệu mẫu có sẵn")
-async def scan_demo_sample(
-    sample_index: int = Form(0, description="Chỉ số thư mục mẫu trong Dữ liệu mẫu (0-47)")
-):
-    """
-    Chạy thử nghiệm hệ thống trực tiếp trên tập dữ liệu mẫu trong thư mục 'Dữ liệu mẫu'.
-    """
-    if not SAMPLE_DATA_DIR.exists():
-        raise HTTPException(status_code=404, detail="Không tìm thấy thư mục 'Dữ liệu mẫu' trong dự án.")
-
-    valid_exts = {".png", ".jpg", ".jpeg", ".bmp", ".webp"}
-    # Only select subdirs that contain at least one readable image file
-    all_subdirs = sorted([d for d in SAMPLE_DATA_DIR.iterdir() if d.is_dir()])
-    subdirs = [
-        d for d in all_subdirs
-        if any(f.is_file() and f.suffix.lower() in valid_exts for f in d.iterdir())
-    ]
-    if not subdirs:
-        raise HTTPException(status_code=404, detail="Thư mục 'Dữ liệu mẫu' không chứa ảnh hợp lệ.")
-
-    idx = sample_index % len(subdirs)
-    target_folder = subdirs[idx]
-
-    # Look for all valid image files
-    imgs = [f for f in target_folder.iterdir() if f.is_file() and f.suffix.lower() in valid_exts]
-    if not imgs:
-        raise HTTPException(status_code=404, detail=f"Không tìm thấy ảnh trong {target_folder.name}")
-
-    try:
-        # Load front image (look for Tệp_000(1).png, Tệp_000.png, or first candidate)
-        front_img_path = None
-        for cand_name in ["Tệp_000(1).png", "Tệp_000.png", "IMG_4271.JPG", "front.jpg", "front.png"]:
-            cand = target_folder / cand_name
-            if cand.exists():
-                front_img_path = cand
-                break
-        if not front_img_path:
-            front_img_path = imgs[0]
-
-        record_id, extracted, raw_boxes, elapsed, img_url = await run_in_threadpool(
-            process_sample_image, front_img_path, target_folder.name
-        )
-
-        fields = extracted["fields"]
-        db_payload = {
-            "id": record_id,
-            "document_type": extracted["document_type"],
-            "side": extracted["side"],
-            "id_number": fields["id_number"]["value"],
-            "full_name": fields["full_name"]["value"],
-            "date_of_birth": fields["date_of_birth"]["value"],
-            "gender": fields["gender"]["value"],
-            "nationality": fields["nationality"]["value"],
-            "place_of_origin": fields["place_of_origin"]["value"],
-            "place_of_residence": fields["place_of_residence"]["value"],
-            "date_of_expiry": fields["date_of_expiry"]["value"],
-            "confidence_score": extracted["overall_confidence"],
-            "processing_time_sec": elapsed,
-            "image_front_path": img_url,
-            "raw_detection_json": raw_boxes,
-            "notes": f"Mẫu kiểm thử từ {target_folder.name}"
-        }
-        save_record(db_payload)
-
-        field_details = {
-            k: FieldDetail(value=v["value"], confidence=round(v["confidence"], 2))
-            for k, v in fields.items()
-        }
-
-        return OCRScanResponse(
-            id=record_id,
-            created_at=time.strftime("%Y-%m-%dT%H:%M:%S"),
-            document_type=extracted["document_type"],
-            side=extracted["side"],
-            overall_confidence=extracted["overall_confidence"],
-            processing_time_sec=elapsed,
-            fields=field_details,
-            warnings=extracted["warnings"],
-            image_url=img_url,
-            detected_boxes=[
-                BoundingBox(box=b["box"], text=b["text"], confidence=round(b["confidence"], 2))
-                for b in raw_boxes
-            ],
-            raw_texts=[b["text"] for b in raw_boxes]
-        )
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"Lỗi kiểm thử dữ liệu mẫu: {str(e)}")

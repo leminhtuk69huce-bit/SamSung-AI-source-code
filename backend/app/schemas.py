@@ -87,4 +87,3 @@ class HealthResponse(BaseModel):
     version: str
     ocr_engine: str
     gpu_enabled: bool
-    total_sample_cases_available: int

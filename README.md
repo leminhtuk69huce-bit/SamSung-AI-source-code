@@ -32,8 +32,6 @@ e:\Samsung source code\
 │   ├── YEU_CAU_GIAO_DIEN_UI_UX.md # Đặc tả chi tiết UI/UX cho AI / Dev Frontend
 │   └── PROMPT_CHO_AI_FRONTEND.md  # Prompt copy-paste sẵn để đưa cho AI khác làm UI
 │
-├── Dữ liệu mẫu/                   # 48 bộ dữ liệu quét CCCD thực nghiệm
-│
 ├── SIC_AI_Capstone Project_Final Report.docx               # Quyển báo cáo in (Template)
 ├── SIC_AI_Capstone Project_Presentation Slide Template.pptx # Slides báo cáo (Template)
 └── SIC_AI_Capstone Project_Action Plan.docx                # Kế hoạch hành động (Template)
@@ -66,7 +64,7 @@ Sau khi chạy, hệ thống sẽ mở các cổng dịch vụ tại:
 
 ## 🧪 CHẠY KIỂM THỬ TỰ ĐỘNG (AUTOMATED TESTS)
 
-Hệ thống đã tích hợp sẵn test suite kiểm thử toàn diện mọi API và trích xuất dữ liệu mẫu:
+Hệ thống đã tích hợp sẵn test suite kiểm thử toàn diện mọi API:
 ```powershell
 cd "e:\Samsung source code"
 $env:KMP_DUPLICATE_LIB_OK="TRUE"

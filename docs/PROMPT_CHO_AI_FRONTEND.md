@@ -30,10 +30,9 @@ Hãy giúp tôi xây dựng trọn vẹn mã nguồn Frontend cho dự án này 
     `{ "image_base64": "data:image/jpeg;base64,...", "side_hint": "auto" }`
   + Hiển thị trạng thái Loading Skeleton mượt mà trong khi chờ backend xử lý.
 
-#### MÀN HÌNH 2: TẢI ẢNH FILE & DỮ LIỆU MẪU
+#### MÀN HÌNH 2: TẢI ẢNH FILE (DRAG & DROP)
 - Vùng Drag & Drop tải file ảnh (JPG, PNG, JPEG).
 - Hỗ trợ quét 1 mặt (POST `/api/v1/ocr/scan`) hoặc kéo thả cùng lúc 2 mặt trước + sau (POST `/api/v1/ocr/scan-both`).
-- Khung chạy thử Dữ liệu mẫu (POST `/api/v1/ocr/demo-sample` với `sample_index=0..47`).
 
 #### MÀN HÌNH 3: BẢNG KẾT QUẢ TRÍCH XUẤT (RESULT INSPECTOR)
 - Bố cục 2 cột (Side-by-side):
