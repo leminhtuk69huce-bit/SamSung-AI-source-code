@@ -1,7 +1,14 @@
 import os
 import sys
 
-# Ensure KMP_DUPLICATE_LIB_OK is set before importing torch or cv2
+# Ensure UTF-8 streams and environment before any imports
+if sys.platform.startswith("win"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+os.environ["PYTHONIOENCODING"] = "utf-8"
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 # Add current directory to python path

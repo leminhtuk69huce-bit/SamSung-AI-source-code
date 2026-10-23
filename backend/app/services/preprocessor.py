@@ -98,7 +98,10 @@ def auto_orient_card(image: np.ndarray) -> Tuple[np.ndarray, int]:
             return corrected, 90
 
     except Exception as e:
-        print(f"⚠️ [AUTO-ORIENT] Lưu ý nhận diện góc xoay: {e}")
+        try:
+            print(f"[AUTO-ORIENT] Luu y nhan dien goc xoay: {e}")
+        except Exception:
+            pass
 
     return image, 0
 
@@ -152,7 +155,10 @@ def save_image_to_storage(image: np.ndarray, destination_path: Path) -> Optional
             f.write(encoded_img.tobytes())
         return str(destination_path)
     except Exception as e:
-        print(f"⚠️ [STORAGE] Lưu ý: Không thể lưu ảnh vào {destination_path}: {e}")
+        try:
+            print(f"[STORAGE] Luu y: Khong the luu anh vao {destination_path}: {e}")
+        except Exception:
+            pass
         try:
             import tempfile
             import os

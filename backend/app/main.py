@@ -1,4 +1,14 @@
 import os
+import sys
+
+if sys.platform.startswith("win"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+os.environ["PYTHONIOENCODING"] = "utf-8"
+
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -24,23 +34,23 @@ from .api.stats_routes import router as stats_router
 async def lifespan(app: FastAPI):
     # Startup: ensure DB initialized and preload OCR model
     print("=" * 60)
-    print("🚀 ĐANG KHỞI ĐỘNG HỆ THỐNG BACKEND OCR CCCD/CMND...")
+    print("[INFO] DANG KHOI DONG HE THONG BACKEND OCR CCCD/CMND...")
     print("=" * 60)
     try:
         init_db()
     except Exception as e:
-        print(f"⚠️ Chú ý khởi tạo Database: {e}")
+        print(f"[WARN] Chu y khoi tao Database: {e}")
     # Preload OCR engine so first request is snappy
     try:
         get_ocr_engine()
     except Exception as e:
-        print(f"⚠️ Chú ý khởi tạo OCR Engine: {e}")
-    print("✅ HỆ THỐNG BACKEND ĐÃ SẴN SÀNG PHỤC VỤ!")
-    print("📖 Tài liệu API Swagger tại: http://localhost:8000/docs")
+        print(f"[WARN] Chu y khoi tao OCR Engine: {e}")
+    print("[OK] HE THONG BACKEND DA SAN SANG PHUC VU!")
+    print("[INFO] Tai lieu API Swagger tai: http://localhost:8000/docs")
     print("=" * 60)
     yield
     # Shutdown
-    print("Đang tắt hệ thống OCR Backend...")
+    print("[INFO] Dang tat he thong OCR Backend...")
 
 app = FastAPI(
     title=API_TITLE,
@@ -143,8 +153,8 @@ try:
         threading.Thread(target=open_browser, daemon=True).start()
 
         print("=" * 60)
-        print(f"🚀 AI OCR SERVER ĐANG CHẠY TẠI: {url}")
-        print("   Nhấn Ctrl+C để dừng server.")
+        print(f"[INFO] AI OCR SERVER DANG CHAY TAI: {url}")
+        print("   Nhan Ctrl+C de dung server.")
         print("=" * 60)
 
         try:

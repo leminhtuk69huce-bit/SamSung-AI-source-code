@@ -79,7 +79,7 @@ def process_sample_image(front_img_path: Path, target_folder_name: str) -> tuple
 
     engine = get_ocr_engine()
     raw_boxes = engine.run_ocr(enhanced)
-    extracted = extract_fields(raw_boxes, side_hint="FRONT")
+    extracted = extract_fields(raw_boxes, side_hint="auto")
     elapsed = round(time.time() - t0, 2)
 
     record_id = str(uuid.uuid4())
@@ -98,13 +98,16 @@ async def scan_file(
     Nhận diện kí tự và trích xuất thông tin từ file ảnh tải lên.
     Tự động phân loại mặt trước/sau và loại thẻ nếu để side_hint='auto'.
     """
-    if not file.content_type.startswith("image/"):
-        raise HTTPException(status_code=400, detail="Vui lòng tải lên file định dạng hình ảnh hợp lệ.")
+    valid_exts = (".jpg", ".jpeg", ".png", ".bmp", ".webp", ".tiff")
+    is_image = (file.content_type and file.content_type.startswith("image/")) or (file.filename and file.filename.lower().endswith(valid_exts))
+    if not is_image:
+        raise HTTPException(status_code=400, detail="Vui lòng tải lên file định dạng hình ảnh hợp lệ (JPG, PNG, JPEG).")
 
     try:
         content = await file.read()
+        chosen_side = (side_hint or "auto").upper()
         record_id, extracted, raw_boxes, elapsed, img_url = await run_in_threadpool(
-            process_single_image, content, filename_prefix="upload", side_hint=side_hint.upper()
+            process_single_image, content, filename_prefix="upload", side_hint=chosen_side
         )
 
         # Prepare database payload
@@ -159,6 +162,8 @@ async def scan_file(
             raw_texts=[b["text"] for b in raw_boxes]
         )
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Lỗi xử lý OCR: {str(e)}")
 
 @router.post("/scan-webcam", response_model=OCRScanResponse, summary="Quét ảnh trực tiếp từ Webcam máy tính (Base64)")
@@ -221,6 +226,8 @@ async def scan_webcam(payload: WebcamScanRequest):
             raw_texts=[b["text"] for b in raw_boxes]
         )
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Lỗi xử lý OCR webcam: {str(e)}")
 
 @router.post("/scan-both", response_model=OCRScanResponse, summary="Quét cả 2 mặt trước và sau (Ghép thông tin)")
@@ -297,6 +304,8 @@ async def scan_both_sides(
             ]
         )
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Lỗi ghép 2 mặt thẻ: {str(e)}")
 
 @router.post("/demo-sample", response_model=OCRScanResponse, summary="Chạy thử với bộ dữ liệu mẫu có sẵn")
@@ -309,22 +318,33 @@ async def scan_demo_sample(
     if not SAMPLE_DATA_DIR.exists():
         raise HTTPException(status_code=404, detail="Không tìm thấy thư mục 'Dữ liệu mẫu' trong dự án.")
 
-    subdirs = sorted([d for d in SAMPLE_DATA_DIR.iterdir() if d.is_dir()])
+    valid_exts = {".png", ".jpg", ".jpeg", ".bmp", ".webp"}
+    # Only select subdirs that contain at least one readable image file
+    all_subdirs = sorted([d for d in SAMPLE_DATA_DIR.iterdir() if d.is_dir()])
+    subdirs = [
+        d for d in all_subdirs
+        if any(f.is_file() and f.suffix.lower() in valid_exts for f in d.iterdir())
+    ]
     if not subdirs:
-        raise HTTPException(status_code=404, detail="Thư mục 'Dữ liệu mẫu' trống.")
+        raise HTTPException(status_code=404, detail="Thư mục 'Dữ liệu mẫu' không chứa ảnh hợp lệ.")
 
     idx = sample_index % len(subdirs)
     target_folder = subdirs[idx]
 
-    # Look for image files
-    imgs = list(target_folder.glob("*.png")) + list(target_folder.glob("*.jpg"))
+    # Look for all valid image files
+    imgs = [f for f in target_folder.iterdir() if f.is_file() and f.suffix.lower() in valid_exts]
     if not imgs:
         raise HTTPException(status_code=404, detail=f"Không tìm thấy ảnh trong {target_folder.name}")
 
     try:
-        # Load front image (usually Tệp_000(1).png or first)
-        front_img_path = target_folder / "Tệp_000(1).png"
-        if not front_img_path.exists():
+        # Load front image (look for Tệp_000(1).png, Tệp_000.png, or first candidate)
+        front_img_path = None
+        for cand_name in ["Tệp_000(1).png", "Tệp_000.png", "IMG_4271.JPG", "front.jpg", "front.png"]:
+            cand = target_folder / cand_name
+            if cand.exists():
+                front_img_path = cand
+                break
+        if not front_img_path:
             front_img_path = imgs[0]
 
         record_id, extracted, raw_boxes, elapsed, img_url = await run_in_threadpool(
@@ -374,4 +394,6 @@ async def scan_demo_sample(
             raw_texts=[b["text"] for b in raw_boxes]
         )
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Lỗi kiểm thử dữ liệu mẫu: {str(e)}")

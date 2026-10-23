@@ -30,7 +30,7 @@ def resolve_db_path() -> Path:
 DB_FILE = resolve_db_path()
 
 def get_db_connection() -> sqlite3.Connection:
-    """Creates and returns a connection with Row factory and resilient journal mode."""
+    """Creates and returns a connection with Row factory and resilient timeout."""
     try:
         DB_FILE.parent.mkdir(parents=True, exist_ok=True)
     except Exception:
@@ -38,18 +38,6 @@ def get_db_connection() -> sqlite3.Connection:
         
     conn = sqlite3.connect(str(DB_FILE), timeout=30.0, check_same_thread=False)
     conn.row_factory = sqlite3.Row
-    
-    # Use standard DELETE journal mode for maximum compatibility across all Windows filesystems
-    try:
-        conn.execute("PRAGMA journal_mode = DELETE;")
-    except Exception:
-        pass
-            
-    try:
-        conn.execute("PRAGMA synchronous = NORMAL;")
-    except Exception:
-        pass
-        
     return conn
 
 
@@ -94,7 +82,10 @@ def init_db():
         """)
         conn.commit()
     except Exception as e:
-        print(f"⚠️ [DATABASE] Lưu ý khi tạo bảng SQLite: {e}")
+        try:
+            print(f"[DATABASE] Luu y khi tao bang SQLite: {e}")
+        except Exception:
+            pass
 
 def json_default_serializer(obj):
     if hasattr(obj, "item"):
@@ -114,43 +105,49 @@ def save_record(data: Dict[str, Any]) -> str:
     else:
         raw_json_str = str(raw_json) if raw_json else "{}"
 
-    with get_db_connection() as conn:
-        conn.execute("""
-            INSERT INTO ocr_records (
-                id, created_at, document_type, side,
-                id_number, full_name, date_of_birth, gender, nationality,
-                place_of_origin, place_of_residence, date_of_expiry,
-                date_of_issue, issuing_authority, identifying_features, mrz_code,
-                confidence_score, processing_time_sec,
-                image_front_path, image_back_path, raw_detection_json,
-                is_verified, notes
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            record_id,
-            created_at,
-            data.get("document_type", "CCCD_CHIP"),
-            data.get("side", "FRONT"),
-            data.get("id_number"),
-            data.get("full_name"),
-            data.get("date_of_birth"),
-            data.get("gender"),
-            data.get("nationality", "Việt Nam"),
-            data.get("place_of_origin"),
-            data.get("place_of_residence"),
-            data.get("date_of_expiry"),
-            data.get("date_of_issue"),
-            data.get("issuing_authority"),
-            data.get("identifying_features"),
-            data.get("mrz_code"),
-            float(data.get("confidence_score", 0.0)),
-            float(data.get("processing_time_sec", 0.0)),
-            data.get("image_front_path"),
-            data.get("image_back_path"),
-            raw_json_str,
-            int(data.get("is_verified", 0)),
-            data.get("notes")
-        ))
-        conn.commit()
+    try:
+        with get_db_connection() as conn:
+            conn.execute("""
+                INSERT INTO ocr_records (
+                    id, created_at, document_type, side,
+                    id_number, full_name, date_of_birth, gender, nationality,
+                    place_of_origin, place_of_residence, date_of_expiry,
+                    date_of_issue, issuing_authority, identifying_features, mrz_code,
+                    confidence_score, processing_time_sec,
+                    image_front_path, image_back_path, raw_detection_json,
+                    is_verified, notes
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                record_id,
+                created_at,
+                data.get("document_type", "CCCD_CHIP"),
+                data.get("side", "FRONT"),
+                data.get("id_number"),
+                data.get("full_name"),
+                data.get("date_of_birth"),
+                data.get("gender"),
+                data.get("nationality", "Việt Nam"),
+                data.get("place_of_origin"),
+                data.get("place_of_residence"),
+                data.get("date_of_expiry"),
+                data.get("date_of_issue"),
+                data.get("issuing_authority"),
+                data.get("identifying_features"),
+                data.get("mrz_code"),
+                float(data.get("confidence_score", 0.0)),
+                float(data.get("processing_time_sec", 0.0)),
+                data.get("image_front_path"),
+                data.get("image_back_path"),
+                raw_json_str,
+                int(data.get("is_verified", 0)),
+                data.get("notes")
+            ))
+            conn.commit()
+    except Exception as e:
+        try:
+            print(f"[DB] Khong the luu ban ghi SQLite: {e}")
+        except Exception:
+            pass
     return record_id
 
 def get_record_by_id(record_id: str) -> Optional[Dict[str, Any]]:
@@ -301,5 +298,8 @@ def get_statistics() -> Dict[str, Any]:
 try:
     init_db()
 except Exception as e:
-    print(f"⚠️ [DATABASE] Lưu ý khởi tạo DB: {e}")
+    try:
+        print(f"[DATABASE] Luu y khoi tao DB: {e}")
+    except Exception:
+        pass
 
