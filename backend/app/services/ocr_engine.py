@@ -90,9 +90,32 @@ class OCREngine:
                     "max_y": round(float(max(ys)), 2),
                 })
 
-        # Sort top-to-bottom, then left-to-right
-        structured_results.sort(key=lambda r: (r["center_y"], r["center_x"]))
-        return structured_results
+        # Line clustering: Nhóm các ô bounding box trên cùng dòng nằm ngang (chênh lệch y <= 13px)
+        # và sắp xếp tuần tự từ trái sang phải để giữ đúng ngữ tự đọc tự nhiên tiếng Việt.
+        if not structured_results:
+            return []
+
+        sorted_by_y = sorted(structured_results, key=lambda b: b["center_y"])
+        lines = []
+        y_thresh = 13.0
+        for b in sorted_by_y:
+            placed = False
+            for line in lines:
+                avg_y = sum(x["center_y"] for x in line) / len(line)
+                if abs(b["center_y"] - avg_y) <= y_thresh:
+                    line.append(b)
+                    placed = True
+                    break
+            if not placed:
+                lines.append([b])
+
+        lines.sort(key=lambda line: sum(x["center_y"] for x in line) / len(line))
+        final_boxes = []
+        for line in lines:
+            line.sort(key=lambda b: b["center_x"])
+            final_boxes.extend(line)
+
+        return final_boxes
 
 # Global engine instance getter
 def get_ocr_engine() -> OCREngine:

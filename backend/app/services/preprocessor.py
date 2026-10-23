@@ -107,18 +107,26 @@ def auto_orient_card(image: np.ndarray) -> Tuple[np.ndarray, int]:
 
 def resize_for_ocr(image: np.ndarray, target_width: int = 1280) -> Tuple[np.ndarray, float]:
     """
-    Resizes image while preserving aspect ratio to optimize OCR speed and accuracy.
-    Returns (resized_image, scale_factor).
+    Tự động chuẩn hóa kích thước ảnh về ngưỡng chuẩn dài nhất (1280px - 1600px)
+    để tối ưu hóa tốc độ và độ sắc nét nhận diện của EasyOCR:
+    - Nếu ảnh nhỏ (w < 1100): phóng to (upscale) với cv2.INTER_LANCZOS4.
+    - Nếu ảnh quá lớn (w > 1600): thu nhỏ (downscale) với cv2.INTER_AREA.
+    - Nếu nằm trong khoảng 1100 - 1600: giữ nguyên.
     """
     h, w = image.shape[:2]
-    if w <= target_width and h <= target_width:
-        return image, 1.0
-    
-    scale = target_width / float(w)
-    new_w = target_width
-    new_h = int(h * scale)
-    resized = cv2.resize(image, (new_w, new_h), interpolation=cv2.INTER_AREA)
-    return resized, scale
+    if w < 1100:
+        scale = 1280.0 / float(w)
+        new_w = 1280
+        new_h = int(h * scale)
+        resized = cv2.resize(image, (new_w, new_h), interpolation=cv2.INTER_LANCZOS4)
+        return resized, scale
+    elif w > 1600:
+        scale = 1600.0 / float(w)
+        new_w = 1600
+        new_h = int(h * scale)
+        resized = cv2.resize(image, (new_w, new_h), interpolation=cv2.INTER_AREA)
+        return resized, scale
+    return image, 1.0
 
 def enhance_image(image: np.ndarray) -> np.ndarray:
     """
