@@ -1214,14 +1214,9 @@
 
         <!-- Scan-both info & utility actions -->
         <div style="padding:10px 12px 14px; flex-shrink:0; background:var(--bg-card); border-top:1px solid var(--border);">
-          <div style="display:flex; gap:8px;">
-            <button class="btn btn-amber btn-sm" onclick="resetScan()" style="flex:1;">
-              <i class="fa-solid fa-rotate-left"></i> Xóa kết quả
-            </button>
-            <button class="btn btn-ghost btn-sm" onclick="exportCurrentJSON()" style="flex:1;">
-              <i class="fa-solid fa-download"></i> Xuất JSON
-            </button>
-          </div>
+          <button class="btn btn-amber btn-sm btn-full" onclick="resetScan()">
+            <i class="fa-solid fa-rotate-left"></i> Xóa kết quả / Quét lại
+          </button>
         </div>
       </div>
 
@@ -1451,14 +1446,11 @@
           <div><strong id="confirm-name-preview">—</strong></div>
           <div style="margin-top:2px;">Kiểm tra tất cả thông tin trước khi xác nhận</div>
         </div>
-        <button class="btn btn-ghost btn-sm" onclick="exportCurrentJSON()">
-          <i class="fa-solid fa-download"></i> JSON
-        </button>
         <button class="btn btn-ghost btn-sm" onclick="exportCurrentCSV()">
           <i class="fa-solid fa-file-csv"></i> CSV
         </button>
         <button class="btn btn-success btn-md" onclick="confirmAndSave()" id="btn-confirm">
-          <i class="fa-solid fa-shield-check"></i> Xác nhận chính xác
+          <i class="fa-solid fa-shield-check"></i> Xác nhận & Lưu (Tự động xuất JSON)
         </button>
       </div>
 
@@ -2188,7 +2180,10 @@
       // Show verification modal
       showVerificationModal(payload, now);
 
-      showToast('success', 'Đã xác nhận và lưu thành công!');
+      // Auto export JSON file as requested upon confirmation
+      exportCurrentJSON();
+
+      showToast('success', 'Đã xác nhận và tự động xuất file JSON thành công!');
       loadHistory();
     } catch(err) {
       showToast('error', 'Lỗi lưu: ' + err.message);

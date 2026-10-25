@@ -67,6 +67,53 @@ def remove_vietnamese_accents(text: str) -> str:
         res.append(s0[idx] if idx >= 0 else ch)
     return "".join(res).upper()
 
+VIETNAM_PROVINCES = [
+    "An Giang", "Bà Rịa - Vũng Tàu", "Bắc Giang", "Bắc Kạn", "Bạc Liêu", "Bắc Ninh",
+    "Bến Tre", "Bình Định", "Bình Dương", "Bình Phước", "Bình Thuận", "Cà Mau",
+    "Cần Thơ", "Cao Bằng", "Đà Nẵng", "Đắk Lắk", "Đắk Nông", "Điện Biên",
+    "Đồng Nai", "Đồng Tháp", "Gia Lai", "Hà Giang", "Hà Nam", "Hà Nội",
+    "Hà Tĩnh", "Hải Dương", "Hải Phòng", "Hậu Giang", "Hòa Bình", "Hưng Yên",
+    "Khánh Hòa", "Kiên Giang", "Kon Tum", "Lai Châu", "Lâm Đồng", "Lạng Sơn",
+    "Lào Cai", "Long An", "Nam Định", "Nghệ An", "Ninh Bình", "Ninh Thuận",
+    "Phú Thọ", "Phú Yên", "Quảng Bình", "Quảng Nam", "Quảng Ngãi", "Quảng Ninh",
+    "Quảng Trị", "Sóc Trăng", "Sơn La", "Tây Ninh", "Thái Bình", "Thái Nguyên",
+    "Thanh Hóa", "Thừa Thiên Huế", "Tiền Giang", "TP. Hồ Chí Minh", "Trà Vinh",
+    "Tuyên Quang", "Vĩnh Long", "Vĩnh Phúc", "Yên Bái"
+]
+
+def correct_province_name(addr: str) -> str:
+    """Tự động chuẩn hóa và sửa lỗi dấu tiếng Việt của 63 Tỉnh/Thành phố ở cuối địa chỉ."""
+    if not addr:
+        return addr
+    parts = [p.strip() for p in addr.split(",") if p.strip()]
+    if not parts:
+        return addr
+    last_part = parts[-1]
+    last_norm = remove_vietnamese_accents(last_part).upper()
+    for prov in VIETNAM_PROVINCES:
+        prov_norm = remove_vietnamese_accents(prov).upper()
+        if last_norm == prov_norm or last_norm.endswith(" " + prov_norm):
+            prefix = ""
+            for pref in ["TP.", "TP ", "Thành phố ", "Tỉnh "]:
+                if last_part.startswith(pref):
+                    prefix = pref
+                    break
+            parts[-1] = f"{prefix}{prov}" if prefix and not prov.startswith("TP.") else prov
+            return ", ".join(parts)
+    return addr
+
+def normalize_id_digits(text: str) -> str:
+    """Khắc phục lỗi OCR nhầm ký tự chữ cái tương đồng với số trong chuỗi CCCD/CMND."""
+    charmap = {
+        'O': '0', 'o': '0', 'D': '0', 'Q': '0',
+        'I': '1', 'l': '1', '|': '1', 'i': '1',
+        'Z': '2', 'z': '2',
+        'S': '5', 's': '5',
+        'B': '8'
+    }
+    cleaned = "".join([charmap.get(c, c) for c in text.strip()])
+    return cleaned
+
 def build_td1_mrz(id_num: Optional[str], full_name: Optional[str], dob: Optional[str], gender: Optional[str], expiry: Optional[str]) -> str:
     """Xây dựng mã MRZ chuẩn ICAO Doc 9303 TD1 gồm đúng 3 dòng, mỗi dòng 30 ký tự."""
     clean_id = re.sub(r"\D", "", id_num or "")
@@ -245,7 +292,8 @@ def extract_fields(raw_boxes: List[Dict[str, Any]], side_hint: Optional[str] = "
         t = re.sub(r",(\s*,)+", ",", t)
         t = re.sub(r"^[\s,;:.-]+", "", t)
         t = re.sub(r"[\s,;:.-]+$", "", t)
-        return clean_vietnamese_text(t)
+        cleaned = clean_vietnamese_text(t)
+        return correct_province_name(cleaned)
 
     if side == "FRONT":
         fields["nationality"] = {"value": "Việt Nam", "confidence": 0.99}
@@ -261,9 +309,17 @@ def extract_fields(raw_boxes: List[Dict[str, Any]], side_hint: Optional[str] = "
             if m9 and not fields["id_number"]["value"]:
                 fields["id_number"] = {"value": m9.group(0), "confidence": box["confidence"]}
 
+            # Chuẩn hóa nếu OCR đọc nhầm ký tự O/D/I/l/B/S
+            norm_t = normalize_id_digits(t)
+            m12_norm = ID_NUMBER_REGEX_12.search(norm_t)
+            if m12_norm and not fields["id_number"]["value"]:
+                fields["id_number"] = {"value": m12_norm.group(0), "confidence": box["confidence"]}
+
             if re.search(r"\b(số|no|so)\b", t, re.IGNORECASE) and i + 1 < n:
                 next_t = raw_boxes[i+1]["text"]
                 m = re.search(r"\b\d{9,12}\b", next_t)
+                if not m:
+                    m = re.search(r"\b\d{9,12}\b", normalize_id_digits(next_t))
                 if m:
                     fields["id_number"] = {"value": m.group(0), "confidence": raw_boxes[i+1]["confidence"]}
 

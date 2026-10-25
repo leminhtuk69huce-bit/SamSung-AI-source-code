@@ -130,16 +130,21 @@ def resize_for_ocr(image: np.ndarray, target_width: int = 1280) -> Tuple[np.ndar
 
 def enhance_image(image: np.ndarray) -> np.ndarray:
     """
-    Applies gentle contrast enhancement (CLAHE on L-channel in LAB space)
-    to boost text legibility on low-contrast cards.
+    Tăng cường độ tương phản và độ sắc nét ký tự tiếng Việt (CLAHE + Unsharp Masking)
+    giúp EasyOCR nhận diện rõ nét các dấu thanh (sắc, huyền, hỏi, ngã, nặng).
     """
     try:
         lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
         l, a, b = cv2.split(lab)
-        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        clahe = cv2.createCLAHE(clipLimit=2.2, tileGridSize=(8, 8))
         cl = clahe.apply(l)
         enhanced_lab = cv2.merge((cl, a, b))
-        return cv2.cvtColor(enhanced_lab, cv2.COLOR_LAB2BGR)
+        enhanced_bgr = cv2.cvtColor(enhanced_lab, cv2.COLOR_LAB2BGR)
+        
+        # Unsharp masking để làm nét đường biên ký tự & dấu thanh tiếng Việt
+        gaussian = cv2.GaussianBlur(enhanced_bgr, (0, 0), 2.0)
+        sharpened = cv2.addWeighted(enhanced_bgr, 1.35, gaussian, -0.35, 0)
+        return sharpened
     except Exception:
         return image
 
