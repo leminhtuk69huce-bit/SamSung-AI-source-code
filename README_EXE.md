@@ -3,7 +3,7 @@
 ## 📌 Tổng Quan
 Dự án đã được hoàn thiện và cấu hình tối ưu thành **DUY NHẤT 1 FILE THỰC THI** tại thư mục gốc:
 ```
-e:\Samsung source code\OCR_CCCD.exe
+./OCR_CCCD.exe
 ```
 - **Không cần cài đặt Python** hay môi trường dòng lệnh phức tạp.
 - **Không có các file .bat rườm rà**: Toàn bộ hệ thống chạy qua duy nhất 1 file `OCR_CCCD.exe`.
