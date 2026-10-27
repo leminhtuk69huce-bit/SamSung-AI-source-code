@@ -2119,9 +2119,10 @@
 
     // Warnings
     const warnBox = document.getElementById('warnings-box');
-    if (data.warnings && data.warnings.length > 0) {
+    const filteredWarnings = (data.warnings || []).filter(w => !w.toLowerCase().includes('vung the') && !w.toLowerCase().includes('khung viền thẻ'));
+    if (filteredWarnings.length > 0) {
       warnBox.style.display = 'block';
-      warnBox.innerHTML = data.warnings.map(w => `<p>${w}</p>`).join('');
+      warnBox.innerHTML = filteredWarnings.map(w => `<p>${w}</p>`).join('');
     } else {
       warnBox.style.display = 'none';
     }

@@ -45,7 +45,7 @@ def process_single_image(image_bytes: bytes, filename_prefix: str = "scan", side
     extracted = extract_fields(raw_boxes, side_hint=side_hint)
     if not card_found:
         extracted.setdefault("warnings", []).append(
-            "Khong tu dong xac dinh duoc vung the. Hay dat the CCCD ro rang, du anh sang va tranh vat can."
+            "Không xác định khung viền CCCD, vui lòng chụp lại với đầy đủ ánh sáng và không để vật cản."
         )
     elapsed = round(time.time() - start_time, 2)
 

@@ -43,10 +43,6 @@ def process_single_image(image_bytes: bytes, filename_prefix: str = "scan", side
 
     # 5. Extract Fields
     extracted = extract_fields(raw_boxes, side_hint=side_hint)
-    if not card_found:
-        extracted.setdefault("warnings", []).append(
-            "Khong tu dong xac dinh duoc vung the. Hay dat the CCCD ro rang, du anh sang va tranh vat can."
-        )
     elapsed = round(time.time() - start_time, 2)
 
     # 6. Save image to storage safely
@@ -73,10 +69,6 @@ def process_webcam_image(image_base64: str, side_hint: str = "auto") -> tuple:
     engine = get_ocr_engine()
     raw_boxes = engine.run_ocr(enhanced)
     extracted = extract_fields(raw_boxes, side_hint=side_hint)
-    if not card_found:
-        extracted.setdefault("warnings", []).append(
-            "Khong tu dong xac dinh duoc vung the. Hay dat the CCCD ro rang, du anh sang."
-        )
     elapsed = round(time.time() - start_time, 2)
 
     record_id = str(uuid.uuid4())
