@@ -162,8 +162,8 @@ try:
         except Exception as e:
             print(f"\n[LỖI SERVER]: {e}")
         finally:
-            if sys.stdin and sys.stdin.isatty():
-                print("\n[HỆ THỐNG ĐÃ TẮT] Nhấn Enter để đóng...")
+            if sys.stdin and hasattr(sys.stdin, "isatty") and sys.stdin.isatty():
+                print("\n[HỆ THỐNG ĐÃ TẮT] Nhấn Enter để đóng cửa sổ...")
                 try:
                     input()
                 except Exception:

@@ -19,13 +19,16 @@ backend/*.db-shm
 *.db
 
 # Scanned Card Images (Bảo mật tuyệt đối thông tin cá nhân)
-backend/storage/cards/*
-backend/storage/temp/*
+backend/storage/*
 !backend/storage/.gitkeep
+
+# AI Model weights
+backend/models/*.pth
 
 # Operating System & IDE Artifacts
 .DS_Store
 Thumbs.db
+desktop.ini
 .vscode/
 .idea/
 *.log

@@ -162,11 +162,12 @@ try:
         except Exception as e:
             print(f"\n[LỖI SERVER]: {e}")
         finally:
-            print("\n[HỆ THỐNG ĐÃ TẮT] Nhấn Enter để đóng cửa sổ...")
-            try:
-                input()
-            except Exception:
-                time.sleep(2)
+            if sys.stdin and hasattr(sys.stdin, "isatty") and sys.stdin.isatty():
+                print("\n[HỆ THỐNG ĐÃ TẮT] Nhấn Enter để đóng cửa sổ...")
+                try:
+                    input()
+                except Exception:
+                    pass
 
     uvicorn.run = resilient_uvicorn_run
 except Exception as e:

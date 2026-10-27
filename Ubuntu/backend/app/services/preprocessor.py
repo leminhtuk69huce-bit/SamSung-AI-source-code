@@ -134,6 +134,15 @@ def enhance_image(image: np.ndarray) -> np.ndarray:
     giúp EasyOCR nhận diện rõ nét các dấu thanh (sắc, huyền, hỏi, ngã, nặng).
     """
     try:
+        if image is None:
+            return image
+        if len(image.shape) == 2:
+            image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+        elif image.shape[2] == 1:
+            image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+        elif image.shape[2] == 4:
+            image = cv2.cvtColor(image, cv2.COLOR_BGRA2BGR)
+
         lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
         l, a, b = cv2.split(lab)
         clahe = cv2.createCLAHE(clipLimit=2.2, tileGridSize=(8, 8))
@@ -154,16 +163,17 @@ def save_image_to_storage(image: np.ndarray, destination_path: Path) -> Optional
     Resilient: catches any permission or disk errors and tries fallbacks,
     never throws an unhandled exception that disrupts the OCR pipeline.
     """
+    encoded_img = None
     try:
         destination_path = Path(destination_path)
         ext = destination_path.suffix.lower() or ".jpg"
         destination_path = destination_path.with_suffix(ext)
-        destination_path.parent.mkdir(parents=True, exist_ok=True)
         
         success, encoded_img = cv2.imencode(ext, image)
         if not success:
             return None
-            
+
+        destination_path.parent.mkdir(parents=True, exist_ok=True)
         with open(destination_path, "wb") as f:
             f.write(encoded_img.tobytes())
         return str(destination_path)
@@ -172,15 +182,17 @@ def save_image_to_storage(image: np.ndarray, destination_path: Path) -> Optional
             print(f"[STORAGE] Luu y: Khong the luu anh vao {destination_path}: {e}")
         except Exception:
             pass
-        try:
-            import tempfile
-            import os
-            fallback_dir = Path(os.environ.get("LOCALAPPDATA", tempfile.gettempdir())) / "OCR_CCCD" / "storage"
-            fallback_dir.mkdir(parents=True, exist_ok=True)
-            fallback_path = fallback_dir / destination_path.name
-            with open(fallback_path, "wb") as f:
-                f.write(encoded_img.tobytes())
-            return str(fallback_path)
-        except Exception:
-            return None
+        if encoded_img is not None:
+            try:
+                import tempfile
+                import os
+                fallback_dir = Path(os.environ.get("LOCALAPPDATA", tempfile.gettempdir())) / "OCR_CCCD" / "storage"
+                fallback_dir.mkdir(parents=True, exist_ok=True)
+                fallback_path = fallback_dir / destination_path.name
+                with open(fallback_path, "wb") as f:
+                    f.write(encoded_img.tobytes())
+                return str(fallback_path)
+            except Exception:
+                return None
+        return None
 

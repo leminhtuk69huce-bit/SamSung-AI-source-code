@@ -3,7 +3,7 @@ from typing import List, Dict, Any, Tuple, Optional
 from datetime import datetime
 
 VIETNAMESE_UPPERCASE_REGEX = re.compile(r"^[A-ZÀÁẢÃẠĂẰẮẲẴẶÂẦẤẨẪẬĐÈÉẺẼẸÊỀẾỂỄỆÌÍỈĨỊÒÓỎÕỌÔỒỐỔỖỘƠỜỚỞỠỢÙÚỦŨỤƯỪỨỬỮỰỲÝỶỸỴ\s]+$")
-DATE_REGEX = re.compile(r"\b(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{4})\b")
+DATE_REGEX = re.compile(r"\b(\d{1,2})\s*[/|\-.]\s*(\d{1,2})\s*[/|\-.]\s*(\d{4})\b")
 ID_NUMBER_REGEX_12 = re.compile(r"\b\d{12}\b")
 ID_NUMBER_REGEX_9 = re.compile(r"\b\d{9}\b")
 
@@ -94,9 +94,9 @@ def correct_province_name(addr: str) -> str:
         prov_norm = remove_vietnamese_accents(prov).upper()
         if last_norm == prov_norm or last_norm.endswith(" " + prov_norm):
             prefix = ""
-            for pref in ["TP.", "TP ", "Thành phố ", "Tỉnh "]:
+            for pref in ["TP. ", "TP.", "TP ", "Thành phố ", "Tỉnh "]:
                 if last_part.startswith(pref):
-                    prefix = pref
+                    prefix = "TP. " if pref.strip() in ["TP.", "TP"] else pref
                     break
             parts[-1] = f"{prefix}{prov}" if prefix and not prov.startswith("TP.") else prov
             return ", ".join(parts)
@@ -301,27 +301,32 @@ def extract_fields(raw_boxes: List[Dict[str, Any]], side_hint: Optional[str] = "
         # 1. ID Number
         for i, box in enumerate(raw_boxes):
             t = box["text"]
-            m12 = ID_NUMBER_REGEX_12.search(t)
+            t_clean = re.sub(r"\s+", "", t)
+            norm_t = normalize_id_digits(t)
+            norm_clean = re.sub(r"\s+", "", norm_t)
+
+            m12 = ID_NUMBER_REGEX_12.search(t_clean) or ID_NUMBER_REGEX_12.search(norm_clean)
             if m12:
                 fields["id_number"] = {"value": m12.group(0), "confidence": box["confidence"]}
                 break
-            m9 = ID_NUMBER_REGEX_9.search(t)
+            m9 = ID_NUMBER_REGEX_9.search(t_clean) or ID_NUMBER_REGEX_9.search(norm_clean)
             if m9 and not fields["id_number"]["value"]:
                 fields["id_number"] = {"value": m9.group(0), "confidence": box["confidence"]}
 
-            # Chuẩn hóa nếu OCR đọc nhầm ký tự O/D/I/l/B/S
-            norm_t = normalize_id_digits(t)
-            m12_norm = ID_NUMBER_REGEX_12.search(norm_t)
-            if m12_norm and not fields["id_number"]["value"]:
-                fields["id_number"] = {"value": m12_norm.group(0), "confidence": box["confidence"]}
-
             if re.search(r"\b(số|no|so)\b", t, re.IGNORECASE) and i + 1 < n:
-                next_t = raw_boxes[i+1]["text"]
-                m = re.search(r"\b\d{9,12}\b", next_t)
-                if not m:
-                    m = re.search(r"\b\d{9,12}\b", normalize_id_digits(next_t))
+                next_t = re.sub(r"\s+", "", raw_boxes[i+1]["text"])
+                m = re.search(r"\b\d{9,12}\b", next_t) or re.search(r"\b\d{9,12}\b", normalize_id_digits(next_t))
                 if m:
                     fields["id_number"] = {"value": m.group(0), "confidence": raw_boxes[i+1]["confidence"]}
+
+            # Kiem tra neu day 12 so bi ngat thanh 2 box tren cung mot dong ngang
+            if not fields["id_number"]["value"] and i + 1 < n:
+                next_box = raw_boxes[i+1]
+                if abs(box.get("center_y", 0) - next_box.get("center_y", 0)) <= 12:
+                    joined = re.sub(r"\s+", "", normalize_id_digits(t + next_box["text"]))
+                    m12_join = ID_NUMBER_REGEX_12.search(joined)
+                    if m12_join:
+                        fields["id_number"] = {"value": m12_join.group(0), "confidence": round((box["confidence"] + next_box["confidence"]) / 2, 2)}
 
         # 2. Full Name
         for i, box in enumerate(raw_boxes):
@@ -399,6 +404,10 @@ def extract_fields(raw_boxes: List[Dict[str, Any]], side_hint: Optional[str] = "
             fields["date_of_birth"] = {"value": dob_cand["date"], "confidence": dob_cand["conf"]}
         if exp_cand and not fields["date_of_expiry"]["value"]:
             fields["date_of_expiry"] = {"value": exp_cand["date"], "confidence": exp_cand["conf"]}
+        elif not fields["date_of_expiry"]["value"] and dob_cand:
+            # Quy chuẩn Luật Căn cước: công dân đủ 60 tuổi được cấp CCCD có giá trị vô thời hạn
+            if dob_cand["year"] <= datetime.now().year - 60:
+                fields["date_of_expiry"] = {"value": "Không thời hạn", "confidence": 0.90}
 
         # 4. Gender
         for i, box in enumerate(raw_boxes):
