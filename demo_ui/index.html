@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
   <style>
@@ -226,7 +226,7 @@
       border-right: 1px solid var(--border);
       display: flex;
       flex-direction: column;
-      overflow: hidden;
+      overflow-y: auto;
       position: relative;
     }
 
@@ -245,23 +245,26 @@
     ══════════════════════════════════════════════════════════════ */
     .scan-method-nav {
       display: flex;
-      gap: 6px;
+      gap: 8px;
       padding: 12px 18px;
       background: #f8fafc;
       border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 20;
     }
 
     .scan-method-btn {
       flex: 1;
-      padding: 9px 12px;
+      padding: 10px 14px;
       border-radius: var(--radius-sm);
-      font-size: 12.5px;
+      font-size: 13px;
       font-weight: 600;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 7px;
+      gap: 8px;
       color: var(--text-muted);
       background: #ffffff;
       border: 1px solid var(--border);
@@ -271,20 +274,19 @@
     .scan-method-btn:hover {
       color: var(--primary);
       border-color: var(--primary-soft);
-      background: #ffffff;
+      background: #f0f9ff;
     }
     .scan-method-btn.active {
       background: var(--primary-subtle);
-      border-color: var(--primary-soft);
+      border-color: var(--primary);
       color: var(--primary-hover);
-      box-shadow: 0 1px 2px rgba(2, 132, 199, 0.08);
+      box-shadow: 0 1px 3px rgba(2, 132, 199, 0.12);
     }
 
     .scan-pane {
       display: none;
       flex: 1;
       flex-direction: column;
-      overflow-y: auto;
     }
     .scan-pane.active {
       display: flex;
@@ -360,7 +362,7 @@
       background: #0f172a;
     }
 
-    /* Khung căn chỉnh thẻ (Camera Alignment Guide) - Thiết kế thanh lịch, chuẩn mực con người */
+    /* Khung căn chỉnh thẻ (Camera Alignment Guide) */
     .card-align-guide {
       position: absolute;
       top: 50%;
@@ -376,7 +378,6 @@
       box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.45);
     }
 
-    /* 4 góc căn chỉnh thẻ trang nhã */
     .corner-bracket {
       position: absolute;
       width: 22px;
@@ -402,6 +403,7 @@
       gap: 10px;
       color: var(--text-dim);
       border-bottom: 1px solid var(--border);
+      cursor: pointer;
     }
     .cam-off-icon {
       width: 52px;
@@ -413,6 +415,12 @@
       justify-content: center;
       font-size: 22px;
       color: #64748b;
+      transition: all 0.2s;
+    }
+    .cam-off-placeholder:hover .cam-off-icon {
+      background: var(--primary-subtle);
+      color: var(--primary);
+      transform: scale(1.05);
     }
 
     /* Badge báo đã chụp */
@@ -485,7 +493,7 @@
       color: #065f46;
     }
 
-    /* Ô hiển thị 2 mặt thẻ đã chụp (Dual Thumbnails Grid) */
+    /* Ô hiển thị 2 mặt thẻ đã chụp */
     .dual-card-preview-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -557,7 +565,7 @@
     }
 
     /* ═══════════════════════════════════════════════════════════
-       HỆ THỐNG NÚT BẤM (BUTTONS) - PHẲNG, TINH TẾ, CHUYÊN NGHIỆP
+       HỆ THỐNG NÚT BẤM (BUTTONS)
     ══════════════════════════════════════════════════════════════ */
     .btn {
       display: inline-flex;
@@ -574,7 +582,7 @@
       white-space: nowrap;
     }
     .btn:disabled {
-      opacity: 0.5;
+      opacity: 0.55;
       cursor: not-allowed;
       box-shadow: none !important;
     }
@@ -649,7 +657,7 @@
     .upload-box-area {
       border: 2px dashed #93c5fd;
       border-radius: var(--radius-md);
-      padding: 30px 20px;
+      padding: 26px 20px;
       text-align: center;
       cursor: pointer;
       transition: all 0.2s ease;
@@ -661,20 +669,10 @@
       background: #e0f2fe;
     }
     .upload-box-area i {
-      font-size: 36px;
+      font-size: 38px;
       color: var(--primary);
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       display: block;
-    }
-    .upload-box-area p {
-      font-size: 13px;
-      color: var(--text-main);
-      font-weight: 500;
-      margin-bottom: 4px;
-    }
-    .upload-box-area small {
-      font-size: 11.5px;
-      color: var(--text-dim);
     }
 
     .upload-preview-wrap {
@@ -754,11 +752,11 @@
     .empty-result-view p {
       font-size: 13px;
       color: var(--text-dim);
-      max-width: 320px;
+      max-width: 340px;
       line-height: 1.55;
     }
 
-    /* Thẻ định danh số CCCD nổi bật (Card ID Banner) */
+    /* Thẻ định danh số CCCD nổi bật */
     .id-display-card {
       background: #ffffff;
       border: 1px solid var(--border);
@@ -822,7 +820,7 @@
       font-weight: 500;
     }
 
-    /* Hệ thống ô điền thông tin (Form Input Fields) */
+    /* Hệ thống ô điền thông tin */
     .fields-row-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -881,7 +879,6 @@
       background: #f0fdf4;
     }
 
-    /* Đường phân cách mục thông tin */
     .content-divider {
       display: flex;
       align-items: center;
@@ -1112,7 +1109,7 @@
       display: none;
       position: absolute;
       inset: 0;
-      background: rgba(255, 255, 255, 0.88);
+      background: rgba(255, 255, 255, 0.9);
       z-index: 50;
       flex-direction: column;
       align-items: center;
@@ -1192,9 +1189,9 @@
     <a href="/docs" target="_blank" class="btn btn-outline btn-sm">
       <i class="fa-solid fa-book text-muted"></i> Tài liệu API
     </a>
-    <div class="status-badge">
+    <div class="status-badge" id="backend-status-badge">
       <div class="status-dot"></div>
-      Máy chủ hoạt động
+      <span id="backend-status-text">Máy chủ hoạt động</span>
     </div>
   </div>
 </header>
@@ -1265,10 +1262,10 @@
         </div>
 
         <!-- Màn hình khi chưa bật Camera -->
-        <div class="cam-off-placeholder" id="cam-placeholder">
+        <div class="cam-off-placeholder" id="cam-placeholder" onclick="toggleCamera()">
           <div class="cam-off-icon"><i class="fa-solid fa-camera"></i></div>
           <p style="font-weight:600; color:var(--text-main);">Camera đang ở trạng thái tắt</p>
-          <small>Nhấn "Bật Camera" ở bảng điều khiển bên dưới để bắt đầu</small>
+          <small style="color:var(--primary); font-weight:600;"><i class="fa-solid fa-arrow-pointer"></i> Nhấn vào đây để bật Camera ngay</small>
         </div>
 
         <!-- Badge thông báo đã chụp ảnh -->
@@ -1284,8 +1281,8 @@
           <select class="form-select-sm" id="camera-device-select" style="flex:1;" onchange="switchCameraDevice()">
             <option value="">📷 Camera mặc định của máy</option>
           </select>
-          <button class="btn btn-outline btn-sm" id="btn-toggle-cam" onclick="toggleCamera()">
-            <i class="fa-solid fa-power-off text-muted"></i> Bật Camera
+          <button class="btn btn-primary btn-sm" id="btn-toggle-cam" onclick="toggleCamera()">
+            <i class="fa-solid fa-video"></i> Bật Camera
           </button>
         </div>
 
@@ -1297,7 +1294,7 @@
 
         <!-- Điều khiển chế độ Quét 2 mặt -->
         <div id="cam-actions-both" style="display:flex; flex-direction:column; gap:8px;">
-          <button class="btn btn-primary btn-md btn-full" id="btn-capture-front" onclick="captureFrontPhoto()" disabled>
+          <button class="btn btn-primary btn-md btn-full" id="btn-capture-front" onclick="handleCaptureFrontClick()">
             <i class="fa-solid fa-camera"></i> Chụp Mặt Trước
           </button>
 
@@ -1330,7 +1327,7 @@
               <option value="back">Mặt sau</option>
             </select>
           </div>
-          <button class="btn btn-primary btn-md btn-full" id="btn-capture-photo" onclick="capturePhoto()" disabled>
+          <button class="btn btn-primary btn-md btn-full" id="btn-capture-photo" onclick="handleCaptureSingleClick()">
             <i class="fa-solid fa-camera"></i> Chụp ảnh
           </button>
           <div id="cam-controls-review" style="display:none; gap:8px;">
@@ -1381,32 +1378,44 @@
 
     <!-- MỤC 2: TẢI TỆP HÌNH ẢNH TỪ MÁY TÍNH -->
     <div class="scan-pane" id="spane-upload">
+      
+      <!-- Input file ẩn (Đặt bên ngoài dropzone để tránh loop click) -->
+      <input type="file" id="file-input" accept="image/*" style="display:none;" onchange="handleFileSelected(event)">
+
+      <!-- Hộp kéo thả và bấm chọn file ảnh -->
       <div class="upload-box-area" id="dropzone"
-        onclick="document.getElementById('file-input').click()"
-        ondragover="event.preventDefault(); this.classList.add('drag-over');"
-        ondragleave="this.classList.remove('drag-over');"
+        onclick="triggerFileInput()"
+        ondragover="handleDragOver(event)"
+        ondragleave="handleDragLeave(event)"
         ondrop="handleDrop(event)">
-        <input type="file" id="file-input" accept="image/*" style="display:none;" onchange="handleFileSelected(event)">
         <i class="fa-solid fa-cloud-arrow-up"></i>
-        <p>Kéo thả tệp ảnh vào đây hoặc click để chọn</p>
-        <small>Hỗ trợ định dạng JPG, PNG, JPEG (Dung lượng tối đa 10 MB)</small>
+        <p style="font-size:14px; font-weight:700; color:var(--primary-navy); margin-bottom:4px;">Kéo & thả tệp ảnh vào đây</p>
+        <p style="font-size:12.5px; color:var(--text-dim); margin-bottom:12px;">hoặc bấm nút bên dưới để chọn ảnh từ máy tính</p>
+        <button type="button" class="btn btn-primary btn-sm" style="pointer-events:none;">
+          <i class="fa-solid fa-folder-open"></i> Chọn ảnh từ thiết bị
+        </button>
+        <div style="font-size:11px; color:var(--text-dim); margin-top:10px;">Định dạng: JPG, PNG, JPEG (Tối đa 10 MB)</div>
       </div>
 
       <!-- Xem trước ảnh đơn đã chọn -->
       <div class="upload-preview-wrap" id="upload-preview">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+          <span style="font-size:12px; font-weight:700; color:var(--primary);"><i class="fa-solid fa-image"></i> Ảnh đã chọn</span>
+          <span id="upload-file-name" style="font-size:11.5px; color:var(--text-dim); max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></span>
+        </div>
         <img id="upload-thumb" class="upload-img-view" src="" alt="Ảnh xem trước">
-        <div style="display:flex; gap:8px;">
+        <div style="display:flex; gap:8px; margin-top:4px;">
           <select class="form-select-sm" id="upload-side-select" style="flex:1;">
             <option value="auto">Tự động nhận diện mặt thẻ</option>
             <option value="front">Mặt trước</option>
             <option value="back">Mặt sau</option>
           </select>
-          <button class="btn btn-primary btn-sm" style="flex:1;" onclick="scanUploadedFile()">
+          <button class="btn btn-primary btn-sm" style="flex:1.2; font-weight:700;" onclick="scanUploadedFile()">
             <i class="fa-solid fa-magnifying-glass"></i> Bóc tách dữ liệu
           </button>
         </div>
         <button class="btn btn-outline btn-sm" onclick="resetUpload()">
-          <i class="fa-solid fa-xmark"></i> Chọn ảnh khác
+          <i class="fa-solid fa-xmark"></i> Chọn lại ảnh khác
         </button>
       </div>
 
@@ -1418,32 +1427,40 @@
           <div class="divider-line"></div>
         </div>
 
+        <input type="file" id="front-file" accept="image/*" style="display:none;" onchange="handleFrontFile(event)">
+        <input type="file" id="back-file" accept="image/*" style="display:none;" onchange="handleBackFile(event)">
+
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
           <div>
             <div style="font-size:11px; font-weight:700; color:var(--text-muted); margin-bottom:6px;">MẶT TRƯỚC</div>
             <div style="position:relative; height:85px; border-radius:var(--radius-sm); border:1px solid var(--border); overflow:hidden; background:#f8fafc;">
-              <img id="front-thumb" style="width:100%; height:100%; object-fit:cover; display:block;">
+              <img id="front-thumb" style="width:100%; height:100%; object-fit:cover; display:none;">
               <div id="front-thumb-placeholder" style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:#f8fafc; border:1.5px dashed var(--border); cursor:pointer; font-size:11.5px; color:var(--text-dim);" onclick="document.getElementById('front-file').click()">
-                <i class="fa-solid fa-plus" style="margin-right:5px;"></i> Chọn ảnh
+                <i class="fa-solid fa-plus" style="margin-right:5px;"></i> Chọn ảnh MT
               </div>
-              <input type="file" id="front-file" accept="image/*" style="display:none;" onchange="handleFrontFile(event)">
             </div>
           </div>
 
           <div>
             <div style="font-size:11px; font-weight:700; color:var(--text-muted); margin-bottom:6px;">MẶT SAU</div>
             <div style="position:relative; height:85px; border-radius:var(--radius-sm); border:1px solid var(--border); overflow:hidden; background:#f8fafc;">
-              <img id="back-thumb" style="width:100%; height:100%; object-fit:cover; display:block;">
+              <img id="back-thumb" style="width:100%; height:100%; object-fit:cover; display:none;">
               <div id="back-thumb-placeholder" style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:#f8fafc; border:1.5px dashed var(--border); cursor:pointer; font-size:11.5px; color:var(--text-dim);" onclick="document.getElementById('back-file').click()">
-                <i class="fa-solid fa-plus" style="margin-right:5px;"></i> Chọn ảnh
+                <i class="fa-solid fa-plus" style="margin-right:5px;"></i> Chọn ảnh MS
               </div>
-              <input type="file" id="back-file" accept="image/*" style="display:none;" onchange="handleBackFile(event)">
             </div>
           </div>
         </div>
 
         <button class="btn btn-primary btn-sm btn-full" style="margin-top:12px;" onclick="scanBothSides()">
           <i class="fa-solid fa-layer-group"></i> Ghép & Trích xuất cả 2 mặt
+        </button>
+      </div>
+
+      <!-- Nút làm mới phiên làm việc -->
+      <div style="padding:12px 16px; margin-top:auto;">
+        <button class="btn btn-amber btn-sm btn-full" onclick="resetScan()">
+          <i class="fa-solid fa-arrow-rotate-left"></i> Làm mới / Quét hồ sơ khác
         </button>
       </div>
     </div>
@@ -1745,10 +1762,16 @@
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════
-     JAVASCRIPT: GIỮ NGUYÊN 100% CÁC LOGIC VÀ KẾT NỐI API
+     JAVASCRIPT: TỰ ĐỘNG NHẬN DIỆN BACKEND & XỬ LÝ SỰ KIỆN CHUẨN
 ══════════════════════════════════════════════════════════════ -->
 <script>
-  const API = '';
+  // ─── TỰ ĐỘNG PHÁT HIỆN ENDPOINT BACKEND ───
+  // Nếu mở bằng file:/// hoặc cổng khác 8000, tự động trỏ đến http://127.0.0.1:8000
+  let API = '';
+  if (window.location.protocol === 'file:' || (window.location.port !== '8000' && window.location.port !== '')) {
+    API = 'http://127.0.0.1:8000';
+  }
+
   let currentRecordId = null;
   let currentResultData = null;
   let cameraStream = null;
@@ -1758,28 +1781,213 @@
   let pieChartInst = null, lineChartInst = null;
   let frontFile = null, backFile = null;
 
+  // ─── KIỂM TRA TRẠNG THÁI MÁY CHỦ BACKEND ───
+  async function checkBackendStatus() {
+    const badge = document.getElementById('backend-status-badge');
+    const text = document.getElementById('backend-status-text');
+    const dot = badge ? badge.querySelector('.status-dot') : null;
+
+    try {
+      const res = await fetch(`${API}/api/v1/ocr/stats`, { signal: AbortSignal.timeout(2500) });
+      if (res.ok) {
+        if (badge) {
+          badge.style.background = '#ecfdf5';
+          badge.style.borderColor = '#a7f3d0';
+          badge.style.color = '#065f46';
+        }
+        if (dot) dot.style.background = '#10b981';
+        if (text) text.textContent = 'Máy chủ sẵn sàng (Port 8000)';
+        return true;
+      }
+    } catch(e) {
+      if (badge) {
+        badge.style.background = '#fffbeb';
+        badge.style.borderColor = '#fde68a';
+        badge.style.color = '#b45309';
+      }
+      if (dot) dot.style.background = '#f59e0b';
+      if (text) text.textContent = 'Chưa kết nối máy chủ';
+    }
+    return false;
+  }
+
   // ─── ĐIỀU HƯỚNG TAB CHÍNH ───
   function switchMainTab(tab) {
     ['scan','history','stats'].forEach(t => {
-      document.getElementById('tab-' + t).style.display = 'none';
+      const el = document.getElementById('tab-' + t);
+      if (el) el.style.display = 'none';
       const btn = document.getElementById('tab-btn-' + t);
       if (btn) btn.classList.remove('active');
     });
-    document.getElementById('tab-' + tab).style.display = tab === 'scan' ? 'flex' : (tab === 'history' ? 'flex' : 'block');
+    const target = document.getElementById('tab-' + tab);
+    if (target) {
+      target.style.display = (tab === 'scan' ? 'flex' : (tab === 'history' ? 'flex' : 'block'));
+    }
     const b = document.getElementById('tab-btn-' + tab);
     if (b) b.classList.add('active');
     if (tab === 'history') loadHistory();
     if (tab === 'stats')   loadStats();
   }
 
-  // ─── ĐIỀU HƯỚNG TAB QUÉT ───
+  // ─── ĐIỀU HƯỚNG TAB CON TIẾP NHẬN ẢNH (WEBCAM / UPLOAD) ───
   function switchScanTab(tab) {
     ['webcam','upload'].forEach(t => {
-      document.getElementById('spane-' + t).classList.remove('active');
-      document.getElementById('stab-' + t).classList.remove('active');
+      const pane = document.getElementById('spane-' + t);
+      if (pane) pane.classList.remove('active');
+      const tabBtn = document.getElementById('stab-' + t);
+      if (tabBtn) tabBtn.classList.remove('active');
     });
-    document.getElementById('spane-' + tab).classList.add('active');
-    document.getElementById('stab-' + tab).classList.add('active');
+    const activePane = document.getElementById('spane-' + tab);
+    if (activePane) activePane.classList.add('active');
+    const activeBtn = document.getElementById('stab-' + tab);
+    if (activeBtn) activeBtn.classList.add('active');
+  }
+
+  // ─── XỬ LÝ UPLOAD TỆP TIN AN TOÀN ───
+  function triggerFileInput() {
+    const input = document.getElementById('file-input');
+    if (input) {
+      input.value = ''; // Reset value để có thể chọn lại cùng 1 file
+      input.click();
+    }
+  }
+
+  function handleDragOver(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    const dropzone = document.getElementById('dropzone');
+    if (dropzone) dropzone.classList.add('drag-over');
+  }
+
+  function handleDragLeave(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    const dropzone = document.getElementById('dropzone');
+    if (dropzone) dropzone.classList.remove('drag-over');
+  }
+
+  function handleDrop(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    const dropzone = document.getElementById('dropzone');
+    if (dropzone) dropzone.classList.remove('drag-over');
+    
+    if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const file = e.dataTransfer.files[0];
+      if (!file.type.startsWith('image/')) {
+        showToast('error', 'Chỉ hỗ trợ tệp định dạng hình ảnh (JPG, PNG, JPEG)!');
+        return;
+      }
+      processSelectedFile(file);
+    }
+  }
+
+  function handleFileSelected(e) {
+    if (e.target && e.target.files && e.target.files.length > 0) {
+      processSelectedFile(e.target.files[0]);
+    }
+  }
+
+  function processSelectedFile(file) {
+    selectedFile = file;
+    const url = URL.createObjectURL(file);
+    const thumb = document.getElementById('upload-thumb');
+    if (thumb) thumb.src = url;
+    
+    const fileNameEl = document.getElementById('upload-file-name');
+    if (fileNameEl) {
+      const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
+      fileNameEl.textContent = `${file.name} (${sizeMb} MB)`;
+    }
+
+    const preview = document.getElementById('upload-preview');
+    if (preview) preview.style.display = 'flex';
+    const dropzone = document.getElementById('dropzone');
+    if (dropzone) dropzone.style.display = 'none';
+
+    showToast('info', `Đã chọn: ${file.name}. Nhấn "Bóc tách dữ liệu" để bắt đầu nhận diện.`);
+  }
+
+  function resetUpload() {
+    selectedFile = null;
+    const input = document.getElementById('file-input');
+    if (input) input.value = '';
+    const thumb = document.getElementById('upload-thumb');
+    if (thumb) thumb.src = '';
+    const preview = document.getElementById('upload-preview');
+    if (preview) preview.style.display = 'none';
+    const dropzone = document.getElementById('dropzone');
+    if (dropzone) dropzone.style.display = 'block';
+  }
+
+  async function scanUploadedFile() {
+    if (!selectedFile) {
+      showToast('warning', 'Vui lòng chọn hoặc kéo thả tệp ảnh trước!');
+      return;
+    }
+    const sideHint = document.getElementById('upload-side-select') ? document.getElementById('upload-side-select').value : 'auto';
+    const fd = new FormData();
+    fd.append('file', selectedFile);
+    fd.append('side_hint', sideHint);
+
+    setLeftLoading(true, 'Đang phân tích và bóc tách tệp ảnh...');
+    try {
+      const res = await fetch(`${API}/api/v1/ocr/scan`, { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Lỗi xử lý OCR trên máy chủ');
+      renderResult(data);
+      showToast('success', `Trích xuất hoàn tất! Độ tin cậy: ${Math.round((data.overall_confidence||0)*100)}%`);
+    } catch(err) {
+      showToast('error', 'Lỗi: ' + err.message);
+    } finally {
+      setLeftLoading(false);
+    }
+  }
+
+  // ─── TẢI ĐỒNG THỜI 2 MẶT ───
+  function handleFrontFile(e) {
+    frontFile = e.target.files[0];
+    if (!frontFile) return;
+    const url = URL.createObjectURL(frontFile);
+    const thumb = document.getElementById('front-thumb');
+    thumb.src = url;
+    thumb.style.display = 'block';
+    document.getElementById('front-thumb-placeholder').style.display = 'none';
+    showToast('info', 'Đã nạp ảnh Mặt Trước.');
+  }
+
+  function handleBackFile(e) {
+    backFile = e.target.files[0];
+    if (!backFile) return;
+    const url = URL.createObjectURL(backFile);
+    const thumb = document.getElementById('back-thumb');
+    thumb.src = url;
+    thumb.style.display = 'block';
+    document.getElementById('back-thumb-placeholder').style.display = 'none';
+    showToast('info', 'Đã nạp ảnh Mặt Sau.');
+  }
+
+  async function scanBothSides() {
+    if (!frontFile || !backFile) {
+      showToast('warning', 'Vui lòng chọn đủ cả ảnh mặt trước và mặt sau!');
+      return;
+    }
+    const fd = new FormData();
+    fd.append('front_file', frontFile);
+    fd.append('back_file', backFile);
+
+    setLeftLoading(true, 'Đang phân tích & ghép dữ liệu 2 mặt thẻ...');
+    try {
+      const res = await fetch(`${API}/api/v1/ocr/scan-both`, { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Lỗi ghép 2 mặt');
+      renderResult(data);
+      showToast('success', `Ghép 2 mặt thành công! Độ tin cậy: ${Math.round((data.overall_confidence||0)*100)}%`);
+    } catch(err) {
+      showToast('error', 'Lỗi: ' + err.message);
+    } finally {
+      setLeftLoading(false);
+    }
   }
 
   // ─── CHẾ ĐỘ CAMERA & WEBCAM 2 MẶT ───
@@ -1843,10 +2051,7 @@
     if (webcamStep === 1) {
       banner.className = 'guidance-banner';
       bannerText.innerHTML = 'Bước 1: Hướng <strong>MẶT TRƯỚC</strong> thẻ vào khung ➔ Nhấn <strong>"Chụp Mặt Trước"</strong>';
-      if (btnCaptureFront) {
-        btnCaptureFront.style.display = 'inline-flex';
-        btnCaptureFront.disabled = !cameraStream;
-      }
+      if (btnCaptureFront) btnCaptureFront.style.display = 'inline-flex';
       if (step2Buttons) step2Buttons.style.display = 'none';
       if (step3Buttons) step3Buttons.style.display = 'none';
       if (slotFront) slotFront.classList.add('active-slot');
@@ -1891,24 +2096,23 @@
     const placeholder = document.getElementById('cam-placeholder');
     const guideEl = document.getElementById('cam-guide-el');
     const btnToggle = document.getElementById('btn-toggle-cam');
-    const btnCapturePhoto = document.getElementById('btn-capture-photo');
-    const btnCaptureFront = document.getElementById('btn-capture-front');
 
     if (cameraStream) {
       cameraStream.getTracks().forEach(t => t.stop());
       cameraStream = null;
       video.srcObject = null;
       retakePhoto();
-      placeholder.style.display = 'flex';
-      guideEl.style.display = 'none';
-      btnToggle.innerHTML = '<i class="fa-solid fa-power-off text-muted"></i> Bật Camera';
-      if (btnCapturePhoto) btnCapturePhoto.disabled = true;
-      if (btnCaptureFront) btnCaptureFront.disabled = true;
+      if (placeholder) placeholder.style.display = 'flex';
+      if (guideEl) guideEl.style.display = 'none';
+      if (btnToggle) {
+        btnToggle.className = 'btn btn-primary btn-sm';
+        btnToggle.innerHTML = '<i class="fa-solid fa-video"></i> Bật Camera';
+      }
       return;
     }
 
     try {
-      const deviceId = document.getElementById('camera-device-select').value;
+      const deviceId = document.getElementById('camera-device-select') ? document.getElementById('camera-device-select').value : '';
       const constraints = {
         video: { width: { ideal: 1280 }, height: { ideal: 720 }, ...(deviceId ? { deviceId: { exact: deviceId } } : {}) },
         audio: false
@@ -1917,12 +2121,14 @@
       video.srcObject = cameraStream;
       await video.play();
       retakePhoto();
-      placeholder.style.display = 'none';
-      guideEl.style.display = 'block';
-      btnToggle.innerHTML = '<i class="fa-solid fa-stop" style="color:var(--danger);"></i> Tắt Camera';
-      if (btnCapturePhoto) btnCapturePhoto.disabled = false;
-      if (btnCaptureFront) btnCaptureFront.disabled = false;
+      if (placeholder) placeholder.style.display = 'none';
+      if (guideEl) guideEl.style.display = 'block';
+      if (btnToggle) {
+        btnToggle.className = 'btn btn-outline btn-sm';
+        btnToggle.innerHTML = '<i class="fa-solid fa-stop" style="color:var(--danger);"></i> Tắt Camera';
+      }
       await enumerateCameras();
+      showToast('success', 'Camera đã được kích hoạt thành công.');
     } catch(err) {
       showToast('error', 'Không thể mở Camera: ' + err.message);
     }
@@ -1934,6 +2140,28 @@
       cameraStream = null;
       await toggleCamera();
     }
+  }
+
+  function handleCaptureFrontClick() {
+    if (!cameraStream) {
+      showToast('info', 'Đang bật Camera, vui lòng cho phép quyền truy cập...');
+      toggleCamera().then(() => {
+        if (cameraStream) captureFrontPhoto();
+      });
+      return;
+    }
+    captureFrontPhoto();
+  }
+
+  function handleCaptureSingleClick() {
+    if (!cameraStream) {
+      showToast('info', 'Đang bật Camera, vui lòng cho phép quyền truy cập...');
+      toggleCamera().then(() => {
+        if (cameraStream) capturePhoto();
+      });
+      return;
+    }
+    capturePhoto();
   }
 
   function snapFrameBase64() {
@@ -1948,10 +2176,6 @@
   }
 
   function captureFrontPhoto() {
-    if (!cameraStream) {
-      showToast('warning', 'Vui lòng bật webcam trước khi chụp!');
-      return;
-    }
     webcamFrontBase64 = snapFrameBase64();
     document.getElementById('dual-thumb-front-img').src = webcamFrontBase64;
     document.getElementById('dual-thumb-front-img').style.display = 'block';
@@ -1968,10 +2192,6 @@
   }
 
   function captureBackPhoto() {
-    if (!cameraStream) {
-      showToast('warning', 'Vui lòng bật webcam trước khi chụp!');
-      return;
-    }
     webcamBackBase64 = snapFrameBase64();
     document.getElementById('dual-thumb-back-img').src = webcamBackBase64;
     document.getElementById('dual-thumb-back-img').style.display = 'block';
@@ -2051,10 +2271,6 @@
 
   // ─── CHẾ ĐỘ CHỤP 1 MẶT VÀ DUYỆT LẠI ───
   function capturePhoto() {
-    if (!cameraStream) {
-      showToast('warning', 'Vui lòng bật webcam trước khi chụp!');
-      return;
-    }
     capturedImageBase64 = snapFrameBase64();
 
     const snapImg = document.getElementById('webcam-snapshot-img');
@@ -2117,97 +2333,7 @@
     }
   }
 
-  // ─── TẢI TỆP HÌNH ẢNH ───
-  let selectedFile = null;
-
-  function handleFileSelected(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    selectedFile = file;
-    const url = URL.createObjectURL(file);
-    document.getElementById('upload-thumb').src = url;
-    document.getElementById('upload-preview').style.display = 'flex';
-    document.getElementById('dropzone').style.display = 'none';
-  }
-
-  function handleDrop(e) {
-    e.preventDefault();
-    document.getElementById('dropzone').classList.remove('drag-over');
-    const file = e.dataTransfer.files[0];
-    if (!file || !file.type.startsWith('image/')) { showToast('error', 'Chỉ hỗ trợ tệp định dạng hình ảnh!'); return; }
-    selectedFile = file;
-    const url = URL.createObjectURL(file);
-    document.getElementById('upload-thumb').src = url;
-    document.getElementById('upload-preview').style.display = 'flex';
-    document.getElementById('dropzone').style.display = 'none';
-  }
-
-  function resetUpload() {
-    selectedFile = null;
-    document.getElementById('file-input').value = '';
-    document.getElementById('upload-thumb').src = '';
-    document.getElementById('upload-preview').style.display = 'none';
-    document.getElementById('dropzone').style.display = 'block';
-  }
-
-  async function scanUploadedFile() {
-    if (!selectedFile) return showToast('warning', 'Chưa chọn tệp ảnh!');
-    const sideHint = document.getElementById('upload-side-select').value;
-    const fd = new FormData();
-    fd.append('file', selectedFile);
-    fd.append('side_hint', sideHint);
-
-    setLeftLoading(true, 'Đang phân tích và bóc tách tệp ảnh...');
-    try {
-      const res = await fetch(`${API}/api/v1/ocr/scan`, { method: 'POST', body: fd });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || 'Lỗi quét tệp');
-      renderResult(data);
-      showToast('success', `Trích xuất hoàn tất! Độ tin cậy: ${Math.round(data.overall_confidence*100)}%`);
-    } catch(err) {
-      showToast('error', 'Lỗi: ' + err.message);
-    } finally {
-      setLeftLoading(false);
-    }
-  }
-
-  // ─── TẢI ĐỒNG THỜI 2 MẶT ───
-  function handleFrontFile(e) {
-    frontFile = e.target.files[0];
-    if (!frontFile) return;
-    const url = URL.createObjectURL(frontFile);
-    document.getElementById('front-thumb').src = url;
-    document.getElementById('front-thumb-placeholder').style.display = 'none';
-  }
-  function handleBackFile(e) {
-    backFile = e.target.files[0];
-    if (!backFile) return;
-    const url = URL.createObjectURL(backFile);
-    document.getElementById('back-thumb').src = url;
-    document.getElementById('back-thumb-placeholder').style.display = 'none';
-  }
-
-  async function scanBothSides() {
-    if (!frontFile || !backFile) { showToast('warning', 'Vui lòng chọn cả ảnh mặt trước và mặt sau!'); return; }
-    const fd = new FormData();
-    fd.append('front_file', frontFile);
-    fd.append('back_file', backFile);
-
-    setLeftLoading(true, 'Đang phân tích & ghép 2 mặt...');
-    try {
-      const res = await fetch(`${API}/api/v1/ocr/scan-both`, { method: 'POST', body: fd });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || 'Lỗi ghép 2 mặt');
-      renderResult(data);
-      showToast('success', `Ghép 2 mặt thành công! Độ tin cậy: ${Math.round(data.overall_confidence*100)}%`);
-    } catch(err) {
-      showToast('error', 'Lỗi: ' + err.message);
-    } finally {
-      setLeftLoading(false);
-    }
-  }
-
-  // ─── KẾT QUẢ TRÍCH XUẤT ───
+  // ─── KẾT QUẢ TRÍCH XUẤT (RENDER RESULT) ───
   function renderResult(data) {
     currentResultData = data;
     currentRecordId   = data.id;
@@ -2623,7 +2749,6 @@
       document.getElementById('kpi-conf').textContent  = Math.round(data.average_confidence * 100) + '%';
       document.getElementById('kpi-time').textContent  = data.average_processing_time_sec.toFixed(2) + 's';
 
-      // Biểu đồ tròn Doughnut
       const typeData = data.distribution_by_type;
       const typeLabels = Object.keys(typeData).map(k => formatDocType(k));
       const typeVals   = Object.values(typeData);
@@ -2645,7 +2770,6 @@
         }
       });
 
-      // Biểu đồ đường Line Chart
       const trend = data.recent_daily_trends;
       if (lineChartInst) lineChartInst.destroy();
       lineChartInst = new Chart(document.getElementById('lineChart'), {
@@ -2705,10 +2829,11 @@
 
   // ─── KHỞI TẠO HỆ THỐNG BAN ĐẦU ───
   document.addEventListener('DOMContentLoaded', () => {
+    switchMainTab('scan');
     enumerateCameras();
     updateDualStepUI();
+    checkBackendStatus();
     loadHistory();
-    loadStats();
 
     document.getElementById('f-full-name').addEventListener('input', function() {
       document.getElementById('confirm-name-preview').textContent = this.value || '—';
