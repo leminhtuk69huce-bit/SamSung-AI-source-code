@@ -1,0 +1,17 @@
+services:
+  ocr-cccd-ubuntu:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ocr-cccd-ubuntu:latest
+    container_name: ocr_cccd_ubuntu_app
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      # Giữ lại dữ liệu ảnh và CSDL trên máy host để không bị mất khi restart container
+      - ./backend/storage:/app/backend/storage
+      - ./backend/ocr_database.db:/app/backend/ocr_database.db
+    environment:
+      - PYTHONIOENCODING=utf-8
+      - OCR_GPU=false

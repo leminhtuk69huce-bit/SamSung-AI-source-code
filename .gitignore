@@ -37,3 +37,12 @@ desktop.ini
 # Private training dataset (DO NOT COMMIT OR PUSH TO GITHUB)
 Dữ liệu mẫu/
 Dữ liệu mẫu
+
+# Ubuntu distribution local files
+Ubuntu/venv/
+Ubuntu/backend/*.db
+Ubuntu/backend/*.db*
+Ubuntu/backend/storage/*
+!Ubuntu/backend/storage/.gitkeep
+Ubuntu/backend/models/*.pth
+

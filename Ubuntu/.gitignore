@@ -1,0 +1,31 @@
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv/
+
+# Python Bytecode & Cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# Local SQLite Database (Tự động khởi tạo mới trên từng máy)
+backend/*.db
+backend/*.db-journal
+backend/*.db-wal
+backend/*.db-shm
+*.db
+
+# Scanned Card Images (Bảo mật tuyệt đối thông tin cá nhân)
+backend/storage/cards/*
+backend/storage/temp/*
+!backend/storage/.gitkeep
+
+# Operating System & IDE Artifacts
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log
