@@ -38,6 +38,14 @@ desktop.ini
 Dữ liệu mẫu/
 Dữ liệu mẫu
 
+# Course templates & documents provided by SIC
+Khung Mẫu khóa học cung cấp/
+Khung Mẫu khóa học cung cấp
+*.docx
+*.pptx
+docs/*.html
+scratch_*
+
 # Ubuntu distribution local files
 Ubuntu/venv/
 Ubuntu/backend/*.db
