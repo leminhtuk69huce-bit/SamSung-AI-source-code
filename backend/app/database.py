@@ -300,7 +300,9 @@ def list_records(
     }
 
 def update_record(record_id: str, updates: Dict[str, Any]) -> bool:
-    """Updates fields of an existing record and automatically tracks human modifications."""
+    """Updates fields of an existing record and automatically tracks human modifications.
+    Includes automatic UPSERT fallback: if record does not exist yet, creates it directly.
+    """
     allowed_fields = [
         "id_number", "full_name", "date_of_birth", "gender", "nationality",
         "place_of_origin", "place_of_residence", "date_of_expiry",
@@ -310,7 +312,32 @@ def update_record(record_id: str, updates: Dict[str, Any]) -> bool:
     
     existing = get_record_by_id(record_id)
     if not existing:
-        return False
+        # UPSERT FALLBACK: Tự động tạo mới hồ sơ nếu chưa có trong CSDL
+        new_payload = {
+            "id": record_id,
+            "created_at": datetime.now().isoformat(),
+            "document_type": updates.get("document_type") or "CCCD_CHIP",
+            "side": "BOTH" if (updates.get("date_of_issue") or updates.get("issuing_authority")) else "FRONT",
+            "id_number": updates.get("id_number") or "",
+            "full_name": updates.get("full_name") or "",
+            "date_of_birth": updates.get("date_of_birth") or "",
+            "gender": updates.get("gender") or "",
+            "nationality": updates.get("nationality") or "Việt Nam",
+            "place_of_origin": updates.get("place_of_origin") or "",
+            "place_of_residence": updates.get("place_of_residence") or "",
+            "date_of_expiry": updates.get("date_of_expiry") or "",
+            "date_of_issue": updates.get("date_of_issue") or "",
+            "issuing_authority": updates.get("issuing_authority") or "",
+            "identifying_features": updates.get("identifying_features") or "",
+            "confidence_score": 0.95,
+            "processing_time_sec": 0.0,
+            "is_verified": 1,
+            "notes": updates.get("notes") or "Đã lưu vào hệ thống",
+            "edited_fields": "Lưu và xác nhận từ giao diện",
+            "edit_history": "Tạo mới trực tiếp từ bảng kết quả"
+        }
+        save_record(new_payload)
+        return True
 
     # Retrieve initial snapshot if exists, otherwise fallback to existing record
     orig_dict = {}

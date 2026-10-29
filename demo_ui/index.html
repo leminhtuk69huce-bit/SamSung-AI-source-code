@@ -2526,7 +2526,9 @@
 
   // ─── XÁC NHẬN VÀ LƯU VÀO CSDL ───
   async function confirmAndSave() {
-    if (!currentRecordId) return showToast('warning', 'Chưa có hồ sơ nào để xác nhận!');
+    if (!currentRecordId) {
+      currentRecordId = 'rec_' + Date.now();
+    }
 
     try {
       const getVal = (id) => {

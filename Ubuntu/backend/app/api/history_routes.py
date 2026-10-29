@@ -40,6 +40,7 @@ async def update_history_record(record_id: str, payload: RecordUpdatePayload):
     """
     Cho phép người dùng hoặc nhân viên kiểm duyệt chỉnh sửa lại các trường thông tin
     nếu OCR nhận diện sai (Human-in-the-loop verification).
+    Hỗ trợ cơ chế tự động tạo mới (UPSERT) nếu hồ sơ chưa tồn tại trong CSDL.
     """
     try:
         updates = {k: v for k, v in payload.model_dump().items() if v is not None}
@@ -48,10 +49,10 @@ async def update_history_record(record_id: str, payload: RecordUpdatePayload):
 
         success = update_record(record_id, updates)
         if not success:
-            raise HTTPException(status_code=404, detail="Không tìm thấy bản ghi cần cập nhật.")
+            raise HTTPException(status_code=500, detail="Không thể lưu hoặc cập nhật bản ghi vào cơ sở dữ liệu.")
 
         updated_record = get_record_by_id(record_id)
-        return {"status": "success", "message": "Cập nhật bản ghi thành công", "data": updated_record}
+        return {"status": "success", "message": "Xác nhận và lưu hồ sơ thành công", "data": updated_record}
     except HTTPException:
         raise
     except Exception as e:
