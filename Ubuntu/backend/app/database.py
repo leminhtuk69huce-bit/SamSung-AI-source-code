@@ -5,6 +5,7 @@ import uuid
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 from pathlib import Path
+from contextlib import contextmanager
 from .config import BASE_DIR
 
 
@@ -18,8 +19,9 @@ def resolve_db_path() -> Path:
     for candidate in candidates:
         try:
             candidate.parent.mkdir(parents=True, exist_ok=True)
-            test_conn = sqlite3.connect(str(candidate), timeout=3.0)
-            test_conn.execute("PRAGMA journal_mode = DELETE;")
+            test_conn = sqlite3.connect(str(candidate), timeout=5.0)
+            test_conn.execute("PRAGMA journal_mode = WAL;")
+            test_conn.execute("PRAGMA busy_timeout = 10000;")
             test_conn.execute("CREATE TABLE IF NOT EXISTS _test_rw (id INTEGER);")
             test_conn.close()
             return candidate
@@ -29,22 +31,38 @@ def resolve_db_path() -> Path:
 
 DB_FILE = resolve_db_path()
 
-def get_db_connection() -> sqlite3.Connection:
-    """Creates and returns a connection with Row factory and resilient timeout."""
+@contextmanager
+def get_db():
+    """Context manager that guarantees connection is opened with WAL mode and ALWAYS closed cleanly."""
     try:
         DB_FILE.parent.mkdir(parents=True, exist_ok=True)
     except Exception:
         pass
-        
+
     conn = sqlite3.connect(str(DB_FILE), timeout=30.0, check_same_thread=False)
     conn.row_factory = sqlite3.Row
-    return conn
+    try:
+        conn.execute("PRAGMA journal_mode = WAL;")
+        conn.execute("PRAGMA busy_timeout = 10000;")
+    except Exception:
+        pass
+    try:
+        yield conn
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+def get_db_connection():
+    """Compatibility wrapper returning get_db() context manager."""
+    return get_db()
 
 
 def init_db():
     """Initializes tables if they do not exist."""
     try:
-        with get_db_connection() as conn:
+        with get_db() as conn:
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS ocr_records (
                 id TEXT PRIMARY KEY,
@@ -106,7 +124,7 @@ def save_record(data: Dict[str, Any]) -> str:
         raw_json_str = str(raw_json) if raw_json else "{}"
 
     try:
-        with get_db_connection() as conn:
+        with get_db() as conn:
             conn.execute("""
                 INSERT INTO ocr_records (
                     id, created_at, document_type, side,
@@ -152,7 +170,7 @@ def save_record(data: Dict[str, Any]) -> str:
 
 def get_record_by_id(record_id: str) -> Optional[Dict[str, Any]]:
     """Retrieves a single record by ID."""
-    with get_db_connection() as conn:
+    with get_db() as conn:
         row = conn.execute("SELECT * FROM ocr_records WHERE id = ?", (record_id,)).fetchone()
         if not row:
             return None
@@ -190,7 +208,7 @@ def list_records(
 
     # Count total
     count_query = query.replace("SELECT *", "SELECT COUNT(*)")
-    with get_db_connection() as conn:
+    with get_db() as conn:
         total = conn.execute(count_query, params).fetchone()[0]
 
         query += " ORDER BY created_at DESC LIMIT ? OFFSET ?"
@@ -233,7 +251,7 @@ def update_record(record_id: str, updates: Dict[str, Any]) -> bool:
         return False
 
     params.append(record_id)
-    with get_db_connection() as conn:
+    with get_db() as conn:
         cur = conn.execute(
             f"UPDATE ocr_records SET {', '.join(set_clauses)} WHERE id = ?",
             params
@@ -243,14 +261,14 @@ def update_record(record_id: str, updates: Dict[str, Any]) -> bool:
 
 def delete_record(record_id: str) -> bool:
     """Deletes a record by ID."""
-    with get_db_connection() as conn:
+    with get_db() as conn:
         cur = conn.execute("DELETE FROM ocr_records WHERE id = ?", (record_id,))
         conn.commit()
         return cur.rowcount > 0
 
 def get_statistics() -> Dict[str, Any]:
     """Computes high-level statistics for dashboard."""
-    with get_db_connection() as conn:
+    with get_db() as conn:
         total_scans = conn.execute("SELECT COUNT(*) FROM ocr_records").fetchone()[0]
         
         today_date = datetime.now().strftime("%Y-%m-%d")
@@ -293,13 +311,3 @@ def get_statistics() -> Dict[str, Any]:
             "distribution_by_type": types,
             "recent_daily_trends": trends
         }
-
-# Auto-initialize on load
-try:
-    init_db()
-except Exception as e:
-    try:
-        print(f"[DATABASE] Luu y khoi tao DB: {e}")
-    except Exception:
-        pass
-

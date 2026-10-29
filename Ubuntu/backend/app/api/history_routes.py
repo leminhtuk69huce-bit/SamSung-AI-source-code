@@ -41,16 +41,23 @@ async def update_history_record(record_id: str, payload: RecordUpdatePayload):
     Cho phép người dùng hoặc nhân viên kiểm duyệt chỉnh sửa lại các trường thông tin
     nếu OCR nhận diện sai (Human-in-the-loop verification).
     """
-    updates = {k: v for k, v in payload.model_dump().items() if v is not None}
-    if not updates:
-        raise HTTPException(status_code=400, detail="Không có dữ liệu cập nhật.")
+    try:
+        updates = {k: v for k, v in payload.model_dump().items() if v is not None}
+        if not updates:
+            raise HTTPException(status_code=400, detail="Không có dữ liệu cập nhật.")
 
-    success = update_record(record_id, updates)
-    if not success:
-        raise HTTPException(status_code=404, detail="Không tìm thấy bản ghi cần cập nhật.")
+        success = update_record(record_id, updates)
+        if not success:
+            raise HTTPException(status_code=404, detail="Không tìm thấy bản ghi cần cập nhật.")
 
-    updated_record = get_record_by_id(record_id)
-    return {"status": "success", "message": "Cập nhật bản ghi thành công", "data": updated_record}
+        updated_record = get_record_by_id(record_id)
+        return {"status": "success", "message": "Cập nhật bản ghi thành công", "data": updated_record}
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Lỗi khi lưu vào cơ sở dữ liệu: {str(e)}")
 
 @router.delete("/history/{record_id}", summary="Xóa 1 hồ sơ scan")
 async def delete_history_record(record_id: str):

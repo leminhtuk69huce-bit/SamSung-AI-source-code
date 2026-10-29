@@ -1772,6 +1772,26 @@
     API = 'http://127.0.0.1:8000';
   }
 
+  // ─── HELPER AN TOÀN KHI PARSE JSON PHẢN HỒI TỪ BACKEND ───
+  async function parseResponseJson(res, defaultErrorMsg = 'Lỗi máy chủ') {
+    let data = null;
+    const cType = res.headers.get('content-type') || '';
+    if (cType.includes('application/json')) {
+      try {
+        data = await res.json();
+      } catch (_) {}
+    }
+    if (!res.ok) {
+      let errMsg = data && (data.detail || data.message);
+      if (!errMsg) {
+        const rawText = await res.text().catch(() => '');
+        errMsg = rawText || `${defaultErrorMsg} (${res.status})`;
+      }
+      throw new Error(errMsg);
+    }
+    return data || {};
+  }
+
   let currentRecordId = null;
   let currentResultData = null;
   let cameraStream = null;
@@ -1933,8 +1953,7 @@
     setLeftLoading(true, 'Đang phân tích và bóc tách tệp ảnh...');
     try {
       const res = await fetch(`${API}/api/v1/ocr/scan`, { method: 'POST', body: fd });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || 'Lỗi xử lý OCR trên máy chủ');
+      const data = await parseResponseJson(res, 'Lỗi xử lý OCR trên máy chủ');
       renderResult(data);
       showToast('success', `Trích xuất hoàn tất! Độ tin cậy: ${Math.round((data.overall_confidence||0)*100)}%`);
     } catch(err) {
@@ -1979,8 +1998,7 @@
     setLeftLoading(true, 'Đang phân tích & ghép dữ liệu 2 mặt thẻ...');
     try {
       const res = await fetch(`${API}/api/v1/ocr/scan-both`, { method: 'POST', body: fd });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || 'Lỗi ghép 2 mặt');
+      const data = await parseResponseJson(res, 'Lỗi ghép 2 mặt');
       renderResult(data);
       showToast('success', `Ghép 2 mặt thành công! Độ tin cậy: ${Math.round((data.overall_confidence||0)*100)}%`);
     } catch(err) {
@@ -2441,35 +2459,40 @@
   async function confirmAndSave() {
     if (!currentRecordId) return showToast('warning', 'Chưa có hồ sơ nào để xác nhận!');
 
-    const payload = {
-      id_number:          document.getElementById('f-id-number').value.trim(),
-      full_name:          document.getElementById('f-full-name').value.trim(),
-      date_of_birth:      document.getElementById('f-dob').value.trim(),
-      gender:             document.getElementById('f-gender').value,
-      nationality:        document.getElementById('f-nationality').value.trim(),
-      place_of_origin:    document.getElementById('f-origin').value.trim(),
-      place_of_residence: document.getElementById('f-residence').value.trim(),
-      date_of_expiry:     document.getElementById('f-expiry').value.trim(),
-      date_of_issue:      document.getElementById('f-issue-date').value.trim(),
-      issuing_authority:  document.getElementById('f-authority').value.trim(),
-      identifying_features: document.getElementById('f-features').value.trim(),
-      is_verified:        1,
-      notes:              document.getElementById('f-notes').value.trim()
-    };
-
     try {
+      const getVal = (id) => {
+        const el = document.getElementById(id);
+        return el ? el.value.trim() : '';
+      };
+
+      const payload = {
+        id_number:            getVal('f-id-number'),
+        full_name:            getVal('f-full-name'),
+        date_of_birth:        getVal('f-dob'),
+        gender:               (document.getElementById('f-gender') || {}).value || '',
+        nationality:          getVal('f-nationality'),
+        place_of_origin:      getVal('f-origin'),
+        place_of_residence:   getVal('f-residence'),
+        date_of_expiry:       getVal('f-expiry'),
+        date_of_issue:        getVal('f-issue-date'),
+        issuing_authority:    getVal('f-authority'),
+        identifying_features: getVal('f-features'),
+        is_verified:          1,
+        notes:                getVal('f-notes')
+      };
+
       const res = await fetch(`${API}/api/v1/ocr/history/${currentRecordId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || 'Lỗi lưu dữ liệu');
+      const data = await parseResponseJson(res, 'Lỗi lưu dữ liệu');
 
       const now = new Date().toLocaleString('vi-VN');
       const verifiedBanner = document.getElementById('verified-banner');
-      verifiedBanner.style.display = 'flex';
-      document.getElementById('verified-at-text').textContent = 'Xác nhận lúc ' + now;
+      if (verifiedBanner) verifiedBanner.style.display = 'flex';
+      const verText = document.getElementById('verified-at-text');
+      if (verText) verText.textContent = 'Xác nhận lúc ' + now;
 
       document.querySelectorAll('#result-form .field-input-box').forEach(el => el.classList.add('verified'));
 
@@ -2481,6 +2504,8 @@
       showToast('error', 'Lỗi lưu: ' + err.message);
     }
   }
+
+
 
   function showVerificationModal(payload, at) {
     const summaryEl = document.getElementById('v-summary');
