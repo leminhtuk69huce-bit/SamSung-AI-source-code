@@ -4,20 +4,52 @@ import pandas as pd
 from typing import List, Dict, Any
 
 def export_records_to_csv(records: List[Dict[str, Any]]) -> bytes:
-    """Exports OCR records to CSV bytes with UTF-8-SIG (BOM for Excel)."""
+    """Exports OCR records to CSV bytes with UTF-8-SIG (BOM for Excel).
+    Includes full extracted information and precise human-edit audit trail.
+    """
     output = io.StringIO()
     writer = csv.writer(output)
 
-    # Header
+    # Detailed Header
     headers = [
-        "Mã hồ sơ", "Thời gian quét", "Loại giấy tờ", "Mặt", "Số CCCD/CMND",
-        "Họ và tên", "Ngày sinh", "Giới tính", "Quốc tịch", "Quê quán",
-        "Nơi thường trú", "Có giá trị đến", "Ngày cấp", "Nơi cấp",
-        "Đặc điểm nhận dạng", "Độ tin cậy", "Thời gian xử lý (s)", "Đã xác thực", "Ghi chú"
+        "Mã hồ sơ",
+        "Thời gian quét",
+        "Loại giấy tờ",
+        "Mặt thẻ",
+        "Số CCCD/CMND",
+        "Họ và tên",
+        "Ngày sinh",
+        "Giới tính",
+        "Quốc tịch",
+        "Quê quán",
+        "Nơi thường trú",
+        "Có giá trị đến",
+        "Ngày cấp",
+        "Nơi cấp",
+        "Đặc điểm nhận dạng",
+        "Mã MRZ",
+        "Độ tin cậy OCR (%)",
+        "Thời gian xử lý (giây)",
+        "Trạng thái kiểm duyệt",
+        "Người dùng đã sửa",
+        "Danh sách trường đã sửa",
+        "Chi tiết các trường đã sửa (Trước ➔ Sau)",
+        "Ghi chú"
     ]
     writer.writerow(headers)
 
     for r in records:
+        conf_pct = round((r.get("confidence_score") or 0.0) * 100, 1)
+        proc_time = round(r.get("processing_time_sec") or 0.0, 2)
+        is_verified = "Đã xác nhận" if r.get("is_verified") else "Chưa duyệt"
+        
+        edited_fields = r.get("edited_fields") or ""
+        edit_history = r.get("edit_history") or ""
+        
+        has_user_edited = "Có" if (edited_fields and edited_fields != "Giữ nguyên kết quả quét gốc") else "Không"
+        display_edited_fields = edited_fields if edited_fields else "Giữ nguyên kết quả quét gốc"
+        display_edit_history = edit_history if edit_history else "Không chỉnh sửa"
+
         writer.writerow([
             r.get("id"),
             r.get("created_at"),
@@ -34,9 +66,13 @@ def export_records_to_csv(records: List[Dict[str, Any]]) -> bytes:
             r.get("date_of_issue") or "",
             r.get("issuing_authority") or "",
             r.get("identifying_features") or "",
-            r.get("confidence_score") or 0.0,
-            r.get("processing_time_sec") or 0.0,
-            "Đã duyệt" if r.get("is_verified") else "Chưa duyệt",
+            r.get("mrz_code") or "",
+            conf_pct,
+            proc_time,
+            is_verified,
+            has_user_edited,
+            display_edited_fields,
+            display_edit_history,
             r.get("notes") or ""
         ])
 
@@ -44,9 +80,15 @@ def export_records_to_csv(records: List[Dict[str, Any]]) -> bytes:
     return "\ufeff".encode("utf-8") + output.getvalue().encode("utf-8")
 
 def export_records_to_excel(records: List[Dict[str, Any]]) -> bytes:
-    """Exports OCR records to Excel (.xlsx) file bytes with formatted columns."""
+    """Exports OCR records to Excel (.xlsx) file bytes with formatted audit columns."""
     rows = []
     for r in records:
+        edited_fields = r.get("edited_fields") or ""
+        edit_history = r.get("edit_history") or ""
+        has_user_edited = "Có" if (edited_fields and edited_fields != "Giữ nguyên kết quả quét gốc") else "Không"
+        display_edited_fields = edited_fields if edited_fields else "Giữ nguyên kết quả quét gốc"
+        display_edit_history = edit_history if edit_history else "Không chỉnh sửa"
+
         rows.append({
             "Mã hồ sơ": r.get("id"),
             "Thời gian quét": r.get("created_at"),
@@ -63,9 +105,13 @@ def export_records_to_excel(records: List[Dict[str, Any]]) -> bytes:
             "Ngày cấp": r.get("date_of_issue") or "",
             "Nơi cấp": r.get("issuing_authority") or "",
             "Đặc điểm nhận dạng": r.get("identifying_features") or "",
-            "Độ tin cậy (%)": round((r.get("confidence_score") or 0.0) * 100, 1),
-            "Thời gian xử lý (giây)": r.get("processing_time_sec") or 0.0,
-            "Trạng thái": "Đã duyệt" if r.get("is_verified") else "Chưa duyệt",
+            "Mã MRZ": r.get("mrz_code") or "",
+            "Độ tin cậy OCR (%)": round((r.get("confidence_score") or 0.0) * 100, 1),
+            "Thời gian xử lý (giây)": round(r.get("processing_time_sec") or 0.0, 2),
+            "Trạng thái kiểm duyệt": "Đã xác nhận" if r.get("is_verified") else "Chưa duyệt",
+            "Người dùng đã sửa": has_user_edited,
+            "Danh sách trường đã sửa": display_edited_fields,
+            "Chi tiết các trường đã sửa (Trước ➔ Sau)": display_edit_history,
             "Ghi chú": r.get("notes") or ""
         })
 
