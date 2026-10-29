@@ -60,6 +60,13 @@ Báo cáo
 docs/*.html
 scratch_*
 
+# Local development rules, workspace notes & build specifications
+.agents/
+AGENTS.md
+GEMINI.md
+docs/PROMPT_CHO_AI_FRONTEND.md
+backend/test_app.spec
+
 # Ubuntu distribution local files
 Ubuntu/venv/
 Ubuntu/backend/*.db
