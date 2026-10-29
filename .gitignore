@@ -8,20 +8,22 @@ backend/build/
 backend/dist/
 *.spec.bak
 
-# Database & local runtime files
+# Database & local runtime files (Bảo mật thông tin trích xuất)
 *.db
 *.db-shm
 *.db-wal
+*.db-journal
 backend/ocr_database.db
 backend/dist/OCR_CCCD/ocr_database.db
 
-# Logs & temp storage files
+# Logs & temp storage files (Bảo mật ảnh thẻ người dùng)
 *.log
 backend/storage/*
 !backend/storage/.gitkeep
 
-# Environments
+# Environments & secrets
 .env
+.env.*
 .venv
 env/
 venv/
@@ -37,12 +39,24 @@ desktop.ini
 # Private training dataset (DO NOT COMMIT OR PUSH TO GITHUB)
 Dữ liệu mẫu/
 Dữ liệu mẫu
+[Dd]ữ liệu mẫu/
+[Dd]ữ liệu mẫu
+[Dd]*li*u*m*u/
+[Dd]*li*u*m*u
 
-# Course templates & documents provided by SIC
+# Course templates & documents provided by SIC & Reports (Tài liệu nội bộ & báo cáo cá nhân)
 Khung Mẫu khóa học cung cấp/
 Khung Mẫu khóa học cung cấp
+[Kk]hung*M*u*kh*a*h*c*cung*c*p/
+[Kk]hung*M*u*kh*a*h*c*cung*c*p
+Báo cáo/
+Báo cáo
+[Bb]*o*c*o/
+[Bb]*o*c*o
 *.docx
 *.pptx
+*.xlsx
+*.csv
 docs/*.html
 scratch_*
 
@@ -53,4 +67,3 @@ Ubuntu/backend/*.db*
 Ubuntu/backend/storage/*
 !Ubuntu/backend/storage/.gitkeep
 Ubuntu/backend/models/*.pth
-
