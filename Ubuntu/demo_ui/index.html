@@ -1432,9 +1432,14 @@
 
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
           <div>
-            <div style="font-size:11px; font-weight:700; color:var(--text-muted); margin-bottom:6px;">MẶT TRƯỚC</div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <span style="font-size:11px; font-weight:700; color:var(--text-muted);">MẶT TRƯỚC</span>
+              <button type="button" id="btn-clear-front" onclick="clearFrontFile(event)" style="display:none; background:none; border:none; color:#ef4444; font-size:11px; cursor:pointer; font-weight:600; padding:0 2px;" title="Xóa ảnh mặt trước để chọn lại">
+                <i class="fa-solid fa-trash-can"></i> Xóa
+              </button>
+            </div>
             <div style="position:relative; height:85px; border-radius:var(--radius-sm); border:1px solid var(--border); overflow:hidden; background:#f8fafc;">
-              <img id="front-thumb" style="width:100%; height:100%; object-fit:cover; display:none;">
+              <img id="front-thumb" style="width:100%; height:100%; object-fit:cover; display:none; cursor:pointer;" onclick="document.getElementById('front-file').click()" title="Nhấp vào để đổi sang ảnh khác">
               <div id="front-thumb-placeholder" style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:#f8fafc; border:1.5px dashed var(--border); cursor:pointer; font-size:11.5px; color:var(--text-dim);" onclick="document.getElementById('front-file').click()">
                 <i class="fa-solid fa-plus" style="margin-right:5px;"></i> Chọn ảnh MT
               </div>
@@ -1442,9 +1447,14 @@
           </div>
 
           <div>
-            <div style="font-size:11px; font-weight:700; color:var(--text-muted); margin-bottom:6px;">MẶT SAU</div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <span style="font-size:11px; font-weight:700; color:var(--text-muted);">MẶT SAU</span>
+              <button type="button" id="btn-clear-back" onclick="clearBackFile(event)" style="display:none; background:none; border:none; color:#ef4444; font-size:11px; cursor:pointer; font-weight:600; padding:0 2px;" title="Xóa ảnh mặt sau để chọn lại">
+                <i class="fa-solid fa-trash-can"></i> Xóa
+              </button>
+            </div>
             <div style="position:relative; height:85px; border-radius:var(--radius-sm); border:1px solid var(--border); overflow:hidden; background:#f8fafc;">
-              <img id="back-thumb" style="width:100%; height:100%; object-fit:cover; display:none;">
+              <img id="back-thumb" style="width:100%; height:100%; object-fit:cover; display:none; cursor:pointer;" onclick="document.getElementById('back-file').click()" title="Nhấp vào để đổi sang ảnh khác">
               <div id="back-thumb-placeholder" style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:#f8fafc; border:1.5px dashed var(--border); cursor:pointer; font-size:11.5px; color:var(--text-dim);" onclick="document.getElementById('back-file').click()">
                 <i class="fa-solid fa-plus" style="margin-right:5px;"></i> Chọn ảnh MS
               </div>
@@ -1452,9 +1462,14 @@
           </div>
         </div>
 
-        <button class="btn btn-primary btn-sm btn-full" style="margin-top:12px;" onclick="scanBothSides()">
-          <i class="fa-solid fa-layer-group"></i> Ghép & Trích xuất cả 2 mặt
-        </button>
+        <div style="display:flex; gap:8px; margin-top:12px;">
+          <button class="btn btn-primary btn-sm" style="flex:1;" onclick="scanBothSides()">
+            <i class="fa-solid fa-layer-group"></i> Ghép & Trích xuất cả 2 mặt
+          </button>
+          <button type="button" id="btn-clear-both" class="btn btn-outline btn-sm" style="color:#ef4444; border-color:#fca5a5; display:none; align-items:center; gap:5px; white-space:nowrap;" onclick="clearBothSides(event)" title="Xóa cả 2 ảnh mặt trước và mặt sau để chọn lại từ đầu">
+            <i class="fa-solid fa-trash-can"></i> Xóa 2 mặt
+          </button>
+        </div>
       </div>
 
       <!-- Nút làm mới phiên làm việc -->
@@ -1972,6 +1987,9 @@
     thumb.src = url;
     thumb.style.display = 'block';
     document.getElementById('front-thumb-placeholder').style.display = 'none';
+    const btnClear = document.getElementById('btn-clear-front');
+    if (btnClear) btnClear.style.display = 'inline-block';
+    updateBothSidesClearBtn();
     showToast('info', 'Đã nạp ảnh Mặt Trước.');
   }
 
@@ -1983,7 +2001,63 @@
     thumb.src = url;
     thumb.style.display = 'block';
     document.getElementById('back-thumb-placeholder').style.display = 'none';
+    const btnClear = document.getElementById('btn-clear-back');
+    if (btnClear) btnClear.style.display = 'inline-block';
+    updateBothSidesClearBtn();
     showToast('info', 'Đã nạp ảnh Mặt Sau.');
+  }
+
+  function clearFrontFile(e) {
+    if (e) e.stopPropagation();
+    frontFile = null;
+    const input = document.getElementById('front-file');
+    if (input) input.value = '';
+    const thumb = document.getElementById('front-thumb');
+    if (thumb) {
+      thumb.src = '';
+      thumb.style.display = 'none';
+    }
+    const ph = document.getElementById('front-thumb-placeholder');
+    if (ph) ph.style.display = 'flex';
+    const btnClear = document.getElementById('btn-clear-front');
+    if (btnClear) btnClear.style.display = 'none';
+    updateBothSidesClearBtn();
+    showToast('info', 'Đã xóa ảnh Mặt Trước. Bạn có thể chọn ảnh khác.');
+  }
+
+  function clearBackFile(e) {
+    if (e) e.stopPropagation();
+    backFile = null;
+    const input = document.getElementById('back-file');
+    if (input) input.value = '';
+    const thumb = document.getElementById('back-thumb');
+    if (thumb) {
+      thumb.src = '';
+      thumb.style.display = 'none';
+    }
+    const ph = document.getElementById('back-thumb-placeholder');
+    if (ph) ph.style.display = 'flex';
+    const btnClear = document.getElementById('btn-clear-back');
+    if (btnClear) btnClear.style.display = 'none';
+    updateBothSidesClearBtn();
+    showToast('info', 'Đã xóa ảnh Mặt Sau. Bạn có thể chọn ảnh khác.');
+  }
+
+  function clearBothSides(e) {
+    if (e) e.stopPropagation();
+    clearFrontFile();
+    clearBackFile();
+    showToast('info', 'Đã xóa cả 2 mặt thẻ. Vui lòng chọn lại ảnh mới.');
+  }
+
+  function updateBothSidesClearBtn() {
+    const btn = document.getElementById('btn-clear-both');
+    if (!btn) return;
+    if (frontFile || backFile) {
+      btn.style.display = 'inline-flex';
+    } else {
+      btn.style.display = 'none';
+    }
   }
 
   async function scanBothSides() {
@@ -2529,6 +2603,8 @@
     currentResultData = null;
     retakePhoto();
     resetDualCapture();
+    clearFrontFile();
+    clearBackFile();
     document.getElementById('empty-state').style.display = 'flex';
     document.getElementById('result-form').style.display = 'none';
     document.getElementById('confirm-bar').style.display = 'none';
