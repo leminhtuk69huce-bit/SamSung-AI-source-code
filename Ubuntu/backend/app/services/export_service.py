@@ -76,6 +76,7 @@ def export_records_to_csv(records: List[Dict[str, Any]]) -> bytes:
             r.get("notes") or ""
         ])
 
+    # Prepend UTF-8 BOM so Excel opens it with proper Vietnamese accents
     return "\ufeff".encode("utf-8") + output.getvalue().encode("utf-8")
 
 def export_records_to_excel(records: List[Dict[str, Any]]) -> bytes:

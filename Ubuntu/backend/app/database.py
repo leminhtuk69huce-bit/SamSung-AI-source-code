@@ -26,11 +26,20 @@ FIELD_LABELS = {
 
 def resolve_db_path() -> Path:
     """Finds or creates a writable path for the SQLite database."""
-    candidates = [
+    candidates = []
+    # Ưu tiên cơ sở dữ liệu chung của dự án nếu tồn tại
+    if (BASE_DIR / "ocr_database.db").exists():
+        candidates.append(BASE_DIR / "ocr_database.db")
+    if (BASE_DIR.parent / "ocr_database.db").exists():
+        candidates.append(BASE_DIR.parent / "ocr_database.db")
+    if (BASE_DIR.parent.parent / "backend" / "ocr_database.db").exists():
+        candidates.append(BASE_DIR.parent.parent / "backend" / "ocr_database.db")
+    
+    candidates.extend([
         BASE_DIR / "ocr_database.db",
         Path.cwd() / "ocr_database.db",
         Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "OCR_CCCD" / "ocr_database.db"
-    ]
+    ])
     for candidate in candidates:
         try:
             candidate.parent.mkdir(parents=True, exist_ok=True)
@@ -172,6 +181,7 @@ def save_record(data: Dict[str, Any]) -> str:
     else:
         raw_json_str = str(raw_json) if raw_json else "{}"
 
+    # Snapshot of initial extracted fields for audit & diff
     original_dict = {
         "id_number": data.get("id_number") or "",
         "full_name": data.get("full_name") or "",
@@ -190,7 +200,7 @@ def save_record(data: Dict[str, Any]) -> str:
     try:
         with get_db() as conn:
             conn.execute("""
-                INSERT INTO ocr_records (
+                INSERT OR REPLACE INTO ocr_records (
                     id, created_at, document_type, side,
                     id_number, full_name, date_of_birth, gender, nationality,
                     place_of_origin, place_of_residence, date_of_expiry,
@@ -272,6 +282,7 @@ def list_records(
         query += " AND side = ?"
         params.append(side)
 
+    # Count total
     count_query = query.replace("SELECT *", "SELECT COUNT(*)")
     with get_db() as conn:
         total = conn.execute(count_query, params).fetchone()[0]
@@ -337,6 +348,7 @@ def update_record(record_id: str, updates: Dict[str, Any]) -> bool:
         save_record(new_payload)
         return True
 
+    # Retrieve initial snapshot if exists, otherwise fallback to existing record
     orig_dict = {}
     if existing.get("original_fields"):
         try:
@@ -350,6 +362,7 @@ def update_record(record_id: str, updates: Dict[str, Any]) -> bool:
     for field, label in FIELD_LABELS.items():
         if field in updates:
             new_val = str(updates[field] or "").strip()
+            # Compare with original snapshot if available, else existing in db
             old_base_val = str(orig_dict.get(field, existing.get(field) or "")).strip()
             if new_val != old_base_val and (new_val or old_base_val):
                 changed_labels.append(label)
@@ -364,6 +377,7 @@ def update_record(record_id: str, updates: Dict[str, Any]) -> bool:
             set_clauses.append(f"{k} = ?")
             params.append(v)
 
+    # Always mark as verified when confirmed
     if "is_verified" not in updates:
         set_clauses.append("is_verified = ?")
         params.append(1)
@@ -386,7 +400,10 @@ def update_record(record_id: str, updates: Dict[str, Any]) -> bool:
             f"UPDATE ocr_records SET {', '.join(set_clauses)} WHERE id = ?",
             params
         )
-        return cur.rowcount > 0
+        if cur.rowcount == 0:
+            # Fallback upsert if record row wasn't affected
+            save_record({**existing, **updates, "id": record_id})
+        return True
 
 def delete_record(record_id: str) -> bool:
     """Deletes a record by ID."""

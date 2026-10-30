@@ -74,3 +74,11 @@ Ubuntu/backend/*.db*
 Ubuntu/backend/storage/*
 !Ubuntu/backend/storage/.gitkeep
 Ubuntu/backend/models/*.pth
+
+# Samsung Innovation campus materials (Private)
+SamSung Inovation campus/
+[Ss]am[Ss]ung*In*
+
+
+BAN_DOI_CHIEU_KIEN_THUC_*.md
+

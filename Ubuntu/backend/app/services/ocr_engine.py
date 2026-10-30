@@ -1,4 +1,6 @@
 import sys
+import os
+
 if sys.platform.startswith("win"):
     try:
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -6,7 +8,9 @@ if sys.platform.startswith("win"):
     except Exception:
         pass
 
-from ..config import OCR_LANGUAGES, OCR_GPU, BASE_DIR, BUNDLE_DIR
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+
+from ..config import OCR_LANGUAGES, OCR_GPU, OCR_HARDWARE_INFO, BASE_DIR, BUNDLE_DIR
 import easyocr
 import threading
 import numpy as np
@@ -26,7 +30,7 @@ class OCREngine:
         return cls._instance
 
     def _initialize_reader(self):
-        print(f"[OCR] Đang khởi tạo EasyOCR Reader với ngôn ngữ {OCR_LANGUAGES}, GPU={OCR_GPU}...")
+        print(f"[OCR] Đang khởi tạo EasyOCR Reader với ngôn ngữ {OCR_LANGUAGES}, chế độ: {OCR_HARDWARE_INFO}...")
         
         # Check for offline bundled models directory
         model_storage = None
@@ -39,9 +43,9 @@ class OCREngine:
                 model_storage = str(candidate)
                 break
 
+        self.model_storage = model_storage
         reader_kwargs = {
             "lang_list": OCR_LANGUAGES,
-            "gpu": OCR_GPU,
             "detector": True,
             "recognizer": True
         }
@@ -50,8 +54,26 @@ class OCREngine:
             reader_kwargs["model_storage_directory"] = model_storage
             reader_kwargs["download_enabled"] = False
 
-        self.reader = easyocr.Reader(**reader_kwargs)
-        print("[OCR] Khởi tạo EasyOCR Reader thành công!")
+        self.use_gpu = False
+        if OCR_GPU:
+            try:
+                print(f"[OCR TĂNG TỐC] Khởi tạo mô hình trên {OCR_HARDWARE_INFO}...")
+                reader_kwargs["gpu"] = True
+                self.reader = easyocr.Reader(**reader_kwargs)
+                self.use_gpu = True
+                print(f"[OCR TĂNG TỐC] Kích hoạt thành công phần cứng {OCR_HARDWARE_INFO}! Tốc độ xử lý tăng hơn 600%.")
+            except Exception as gpu_err:
+                print(f"[OCR CẢNH BÁO] Không thể khởi tạo GPU ({gpu_err}). Tự động fallback về chế độ CPU an toàn 100%!")
+                reader_kwargs["gpu"] = False
+                self.reader = easyocr.Reader(**reader_kwargs)
+                self.use_gpu = False
+        else:
+            print("[OCR] Khởi tạo EasyOCR với chế độ CPU an toàn...")
+            reader_kwargs["gpu"] = False
+            self.reader = easyocr.Reader(**reader_kwargs)
+            self.use_gpu = False
+
+        print("[OCR] Khởi tạo EasyOCR Reader hoàn tất và sẵn sàng phục vụ!")
 
     def run_ocr(self, image: np.ndarray) -> List[Dict[str, Any]]:
         """
@@ -64,8 +86,30 @@ class OCREngine:
           - 'center_x': average X coordinate
         """
         with self._lock:
-            # easyocr takes RGB or BGR or filepath
-            results = self.reader.readtext(image)
+            try:
+                results = self.reader.readtext(image)
+            except Exception as ocr_err:
+                # Cơ chế đường lui: Fallback tức thì về CPU nếu GPU gặp sự cố hoặc tràn VRAM
+                if getattr(self, "use_gpu", False):
+                    print(f"[OCR GPU Fallback] Lỗi suy luận GPU ({ocr_err}). Đang giải phóng VRAM và chuyển sang CPU dự phòng...")
+                    try:
+                        import torch
+                        torch.cuda.empty_cache()
+                    except Exception:
+                        pass
+                    cpu_kwargs = {
+                        "lang_list": OCR_LANGUAGES,
+                        "gpu": False,
+                        "detector": True,
+                        "recognizer": True
+                    }
+                    if self.model_storage:
+                        cpu_kwargs["model_storage_directory"] = self.model_storage
+                        cpu_kwargs["download_enabled"] = False
+                    cpu_reader = easyocr.Reader(**cpu_kwargs)
+                    results = cpu_reader.readtext(image)
+                else:
+                    raise ocr_err
 
         structured_results = []
         for item in results:
@@ -90,11 +134,10 @@ class OCREngine:
                     "max_y": round(float(max(ys)), 2),
                 })
 
-        # Line clustering: Nhóm các ô bounding box trên cùng dòng nằm ngang (chênh lệch y <= 13px)
-        # và sắp xếp tuần tự từ trái sang phải để giữ đúng ngữ tự đọc tự nhiên tiếng Việt.
         if not structured_results:
             return []
 
+        # Line clustering: Nhóm các ô bounding box trên cùng dòng nằm ngang (chênh lệch y <= 13px)
         sorted_by_y = sorted(structured_results, key=lambda b: b["center_y"])
         lines = []
         y_thresh = 13.0

@@ -2,24 +2,28 @@ import os
 import sys
 from pathlib import Path
 
+# Fix OpenMP duplicate library runtime on Windows Conda
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+
 # ── Path resolution: works in both source mode and PyInstaller EXE ──
 if getattr(sys, 'frozen', False):
-    # Running as EXE → use the directory containing OCR_CCCD.exe
-    # (persistent: DB/storage survive between runs)
     EXE_DIR = Path(sys.executable).parent
     BASE_DIR = EXE_DIR
-    # _MEIPASS is the temp bundle dir (read-only libs); use EXE_DIR for data
     BUNDLE_DIR = Path(sys._MEIPASS) if hasattr(sys, '_MEIPASS') else EXE_DIR
 else:
-    # Running from source
     BASE_DIR = Path(__file__).resolve().parent.parent
     BUNDLE_DIR = BASE_DIR
 
 STORAGE_DIR = BASE_DIR / "storage"
 STORAGE_DIR.mkdir(parents=True, exist_ok=True)
 
-TEMP_DIR = STORAGE_DIR / "temp"
-TEMP_DIR.mkdir(parents=True, exist_ok=True)
+# Ưu tiên thư mục tạm riêng biệt nếu người dùng yêu cầu, tránh rải rác
+custom_temp = Path(r"E:\TEMPPPP\temp)))")
+if custom_temp.exists():
+    TEMP_DIR = custom_temp
+else:
+    TEMP_DIR = STORAGE_DIR / "temp"
+    TEMP_DIR.mkdir(parents=True, exist_ok=True)
 
 import tempfile
 tempfile.tempdir = str(TEMP_DIR)
@@ -35,10 +39,40 @@ else:
 # Database path
 DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{BASE_DIR}/ocr_database.db")
 
-# OCR Settings
+# ── OCR & Hardware Settings ──
 OCR_LANGUAGES = ["vi", "en"]
-OCR_GPU = os.getenv("OCR_GPU", "false").lower() == "true"
 TARGET_IMAGE_WIDTH = 1280  # Optimized width for OCR inference
+
+def _detect_hardware():
+    """
+    Tự động nhận diện phần cứng GPU RTX 4060 hoặc CPU.
+    Hỗ trợ đường lui an toàn: Có thể chuyển sang CPU bằng cách đặt:
+      - Biến môi trường OCR_GPU=false
+      - Hoặc OCR_DEVICE=cpu
+    """
+    env_gpu = os.getenv("OCR_GPU")
+    env_dev = os.getenv("OCR_DEVICE", "").strip().lower()
+
+    # Đường lui: Ép về CPU theo cấu hình người dùng
+    if env_dev == "cpu" or (env_gpu is not None and env_gpu.strip().lower() == "false"):
+        return False, "CPU (Người dùng chỉ định chế độ an toàn)"
+
+    # Ép về GPU nếu người dùng yêu cầu
+    if env_dev in ("cuda", "gpu") or (env_gpu is not None and env_gpu.strip().lower() == "true"):
+        return True, "NVIDIA GPU (Ép buộc qua biến môi trường)"
+
+    # Mặc định: Tự động phát hiện GPU khả dụng
+    try:
+        import torch
+        if torch.cuda.is_available():
+            gpu_name = torch.cuda.get_device_name(0)
+            return True, f"NVIDIA GPU ({gpu_name})"
+    except Exception:
+        pass
+
+    return False, "CPU (Mặc định)"
+
+OCR_GPU, OCR_HARDWARE_INFO = _detect_hardware()
 
 # Confidence thresholds
 CONFIDENCE_HIGH = 0.85

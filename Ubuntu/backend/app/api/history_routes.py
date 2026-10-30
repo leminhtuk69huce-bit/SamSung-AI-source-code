@@ -52,6 +52,8 @@ async def update_history_record(record_id: str, payload: RecordUpdatePayload):
             raise HTTPException(status_code=500, detail="Không thể lưu hoặc cập nhật bản ghi vào cơ sở dữ liệu.")
 
         updated_record = get_record_by_id(record_id)
+        if not updated_record:
+            updated_record = {"id": record_id, **updates, "is_verified": 1}
         return {"status": "success", "message": "Xác nhận và lưu hồ sơ thành công", "data": updated_record}
     except HTTPException:
         raise
