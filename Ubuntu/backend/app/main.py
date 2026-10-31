@@ -32,7 +32,7 @@ from .api.stats_routes import router as stats_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: ensure DB initialized and preload OCR model
+    # Startup: ensure DB initialized
     print("=" * 60)
     print("[INFO] DANG KHOI DONG HE THONG BACKEND OCR CCCD/CMND...")
     print("=" * 60)
@@ -40,12 +40,20 @@ async def lifespan(app: FastAPI):
         init_db()
     except Exception as e:
         print(f"[WARN] Chu y khoi tao Database: {e}")
-    # Preload OCR engine so first request is snappy
-    try:
-        get_ocr_engine()
-    except Exception as e:
-        print(f"[WARN] Chu y khoi tao OCR Engine: {e}")
-    print("[OK] HE THONG BACKEND DA SAN SANG PHUC VU!")
+
+    # Khoi dong preload mo hinh AI trong background thread de server mo cong 8000 TUC THI (<0.05s)
+    # Trinh duyet web mo ngay lap tuc, hoan toan khong bi treo hay delay!
+    import threading
+    def _warmup_ocr():
+        try:
+            get_ocr_engine()
+            print("[OK] HE THONG AI OCR DA SAN SANG PHUC VU 100%!")
+        except Exception as e:
+            print(f"[WARN] Chu y khoi tao OCR Engine: {e}")
+
+    threading.Thread(target=_warmup_ocr, daemon=True, name="OCR-Warmup-Worker").start()
+
+    print("[OK] HE THONG BACKEND DA MO CONG PHUC VU TUC THI!")
     print("[INFO] Tai lieu API Swagger tai: http://localhost:8000/docs")
     print("=" * 60)
     yield
