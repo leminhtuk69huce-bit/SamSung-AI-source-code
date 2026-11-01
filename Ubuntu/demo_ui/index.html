@@ -1957,12 +1957,23 @@
     }
     const sideHint = document.getElementById('upload-side-select') ? document.getElementById('upload-side-select').value : 'auto';
     const fd = new FormData();
-    fd.append('file', selectedFile);
+    fd.append('file', selectedFile, 'uploaded_card.jpg');
     fd.append('side_hint', sideHint);
 
     setLeftLoading(true, 'Đang phân tích và bóc tách tệp ảnh...');
     try {
-      const res = await fetch(`${API}/api/v1/ocr/scan`, { method: 'POST', body: fd });
+      let res = await fetch(`${API}/api/v1/ocr/scan`, { method: 'POST', body: fd });
+      if (!res.ok) {
+        // Fallback sang Base64 JSON nếu multipart gặp lỗi
+        try {
+          const b64 = await fileToBase64(selectedFile);
+          res = await fetch(`${API}/api/v1/ocr/scan-webcam`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image_base64: b64, side_hint: sideHint })
+          });
+        } catch (_) {}
+      }
       const data = await parseResponseJson(res, 'Lỗi xử lý OCR trên máy chủ');
       renderResult(data);
       showToast('success', `Trích xuất hoàn tất! Độ tin cậy: ${Math.round((data.overall_confidence||0)*100)}%`);
@@ -2055,18 +2066,36 @@
     }
   }
 
+  const fileToBase64 = (file) => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
   async function scanBothSides() {
     if (!frontFile || !backFile) {
       showToast('warning', 'Vui lòng chọn đủ cả ảnh mặt trước và mặt sau!');
       return;
     }
     const fd = new FormData();
-    fd.append('front_file', frontFile);
-    fd.append('back_file', backFile);
+    fd.append('front_file', frontFile, 'front_card.jpg');
+    fd.append('back_file', backFile, 'back_card.jpg');
 
     setLeftLoading(true, 'Đang phân tích & ghép dữ liệu 2 mặt thẻ...');
     try {
-      const res = await fetch(`${API}/api/v1/ocr/scan-both`, { method: 'POST', body: fd });
+      let res = await fetch(`${API}/api/v1/ocr/scan-both`, { method: 'POST', body: fd });
+      if (!res.ok) {
+        // Fallback tức thì sang JSON Base64 nếu máy chủ hoặc trình duyệt gặp sự cố multipart
+        console.warn('Multipart gặp lỗi, tự động chuyển sang chế độ Base64 tin cậy 100%...');
+        try {
+          const [fB64, bB64] = await Promise.all([fileToBase64(frontFile), fileToBase64(backFile)]);
+          res = await fetch(`${API}/api/v1/ocr/scan-both`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ front_base64: fB64, back_base64: bB64 })
+          });
+        } catch (_) {}
+      }
       const data = await parseResponseJson(res, 'Lỗi ghép 2 mặt');
       renderResult(data);
       showToast('success', `Ghép 2 mặt thành công! Độ tin cậy: ${Math.round((data.overall_confidence||0)*100)}%`);

@@ -2,7 +2,7 @@ import time
 import uuid
 from pathlib import Path
 from typing import Optional
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Request
 from starlette.concurrency import run_in_threadpool
 from ..config import STORAGE_DIR, TARGET_IMAGE_WIDTH
 from ..schemas import OCRScanResponse, WebcamScanRequest, WebcamBothScanRequest, BoundingBox, FieldDetail
@@ -89,21 +89,46 @@ def process_webcam_image(image_base64: str, side_hint: str = "auto") -> tuple:
 
 @router.post("/scan", response_model=OCRScanResponse, summary="Quét ảnh CCCD/CMND tải lên (File upload)")
 async def scan_file(
-    file: UploadFile = File(..., description="File ảnh thẻ CCCD/CMND (JPG, PNG, JPEG)"),
-    side_hint: Optional[str] = Form("auto", description="Gợi ý mặt thẻ: front | back | auto")
+    file: Optional[UploadFile] = File(None, description="File ảnh thẻ CCCD/CMND (JPG, PNG, JPEG)"),
+    side_hint: Optional[str] = Form("auto", description="Gợi ý mặt thẻ: front | back | auto"),
+    request: Request = None
 ):
-    """
-    Nhận diện kí tự và trích xuất thông tin từ file ảnh tải lên.
-    Tự động phân loại mặt trước/sau và loại thẻ nếu để side_hint='auto'.
-    """
     valid_exts = (".jpg", ".jpeg", ".png", ".bmp", ".webp", ".tiff")
-    is_image = (file.content_type and file.content_type.startswith("image/")) or (file.filename and file.filename.lower().endswith(valid_exts))
-    if not is_image:
+    content = None
+    chosen_side = (side_hint or "auto").upper()
+
+    # Thử lấy content từ UploadFile
+    if file is not None:
+        try:
+            content = await file.read()
+        except Exception:
+            content = None
+
+    # Nếu chưa có content hoặc request gửi JSON Base64
+    if not content and request is not None:
+        try:
+            c_type = request.headers.get("content-type", "").lower()
+            if "application/json" in c_type:
+                import base64 as b64
+                body = await request.json()
+                b64_str = body.get("image_base64") or body.get("file") or body.get("image") or ""
+                if "," in b64_str: b64_str = b64_str.split(",", 1)[-1]
+                if b64_str: content = b64.b64decode(b64_str)
+                if body.get("side_hint"): chosen_side = body.get("side_hint").upper()
+            else:
+                form = await request.form()
+                f_item = form.get("file")
+                if f_item is not None and hasattr(f_item, "read"):
+                    content = await f_item.read()
+                if form.get("side_hint"):
+                    chosen_side = str(form.get("side_hint")).upper()
+        except Exception as parse_e:
+            print(f"[SCAN] Request parse fallback: {parse_e}")
+
+    if not content:
         raise HTTPException(status_code=400, detail="Vui lòng tải lên file định dạng hình ảnh hợp lệ (JPG, PNG, JPEG).")
 
     try:
-        content = await file.read()
-        chosen_side = (side_hint or "auto").upper()
         record_id, extracted, raw_boxes, elapsed, img_url = await run_in_threadpool(
             process_single_image, content, filename_prefix="upload", side_hint=chosen_side
         )
@@ -308,17 +333,70 @@ async def scan_webcam_both(payload: WebcamBothScanRequest):
 
 @router.post("/scan-both", response_model=OCRScanResponse, summary="Quét cả 2 mặt trước và sau (Ghép thông tin)")
 async def scan_both_sides(
-    front_file: UploadFile = File(..., description="Ảnh mặt trước CCCD/CMND"),
-    back_file: UploadFile = File(..., description="Ảnh mặt sau CCCD/CMND")
+    request: Request,
+    front_file: Optional[UploadFile] = File(None, description="Ảnh mặt trước CCCD/CMND"),
+    back_file: Optional[UploadFile] = File(None, description="Ảnh mặt sau CCCD/CMND")
 ):
     """
     Tải lên đồng thời cả 2 mặt trước và sau, ghép toàn bộ thông tin
     thành 1 hồ sơ CCCD hoàn chỉnh (Số, Họ tên, Ngày sinh, Quê quán, Ngày cấp, Nơi cấp, v.v.).
+    Hỗ trợ linh hoạt cả Multipart Form lẫn JSON Base64.
     """
     try:
         t0 = time.time()
-        front_bytes = await front_file.read()
-        back_bytes = await back_file.read()
+        front_bytes = None
+        back_bytes = None
+
+        # 1. Thử lấy từ tham số UploadFile
+        if front_file is not None:
+            try: front_bytes = await front_file.read()
+            except Exception: pass
+        if back_file is not None:
+            try: back_bytes = await back_file.read()
+            except Exception: pass
+
+        # 2. Nếu thiếu dữ liệu, giải mã qua Request linh hoạt (Multipart hoặc JSON)
+        if not front_bytes or not back_bytes:
+            content_type = request.headers.get("content-type", "").lower()
+            if "application/json" in content_type:
+                try:
+                    body = await request.json()
+                    import base64 as b64
+                    f_b64 = body.get("front_base64") or body.get("front_file") or body.get("front") or ""
+                    b_b64 = body.get("back_base64") or body.get("back_file") or body.get("back") or ""
+                    if "," in f_b64: f_b64 = f_b64.split(",", 1)[-1]
+                    if "," in b_b64: b_b64 = b_b64.split(",", 1)[-1]
+                    if f_b64: front_bytes = b64.b64decode(f_b64)
+                    if b_b64: back_bytes = b64.b64decode(b_b64)
+                except Exception as json_e:
+                    print(f"[SCAN-BOTH] JSON decode error: {json_e}")
+            else:
+                try:
+                    form = await request.form()
+                    f_item = form.get("front_file") or form.get("file_front") or form.get("front")
+                    b_item = form.get("back_file") or form.get("file_back") or form.get("back")
+
+                    if f_item is not None:
+                        if hasattr(f_item, "read"): front_bytes = await f_item.read()
+                        elif isinstance(f_item, (bytes, bytearray)): front_bytes = bytes(f_item)
+                        elif isinstance(f_item, str) and f_item.startswith("data:image"):
+                            import base64 as b64
+                            front_bytes = b64.b64decode(f_item.split(",", 1)[-1])
+
+                    if b_item is not None:
+                        if hasattr(b_item, "read"): back_bytes = await b_item.read()
+                        elif isinstance(b_item, (bytes, bytearray)): back_bytes = bytes(b_item)
+                        elif isinstance(b_item, str) and b_item.startswith("data:image"):
+                            import base64 as b64
+                            back_bytes = b64.b64decode(b_item.split(",", 1)[-1])
+                except Exception as form_e:
+                    print(f"[SCAN-BOTH] Form parse error: {form_e}")
+
+        if not front_bytes or not back_bytes:
+            raise HTTPException(
+                status_code=400,
+                detail="Vui lòng chọn đầy đủ cả 2 ảnh Mặt Trước và Mặt Sau."
+            )
 
         # Process front & back in threadpool
         f_id, f_extracted, f_boxes, _, f_url = await run_in_threadpool(
